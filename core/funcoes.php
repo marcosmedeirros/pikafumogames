@@ -1,5 +1,5 @@
 <?php
-// funcoes.php - A INTELIGÊNCIA DO SISTEMA 🧠
+// core/funcoes.php - A INTELIGÊNCIA DO SISTEMA 🧠
 
 /**
  * Recalcula as odds usando "Média Ponderada" (Weighted Probability)

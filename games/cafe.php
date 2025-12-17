@@ -1,38 +1,38 @@
-<?php
-// cafe.php - CLUBE DO CAFÉ (DARK MODE ☕🌑)
-// VERSÃO: SEM TRAVAS DE SEGURANÇA
+﻿<?php
+// cafe.php - CLUBE DO CAFÃ‰ (DARK MODE â˜•ðŸŒ‘)
+// VERSÃƒO: SEM TRAVAS DE SEGURANÃ‡A
 session_start();
-require 'conexao.php';
+require '../core/conexao.php';
 
-// 1. Segurança de Sessão
+// 1. SeguranÃ§a de SessÃ£o
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: ../auth/login.php");
     exit;
 }
 
 $user_id = $_SESSION['user_id'];
 $msg = "";
 
-// 2. Processar Ações (Fazer Café ou Comprar Pó)
+// 2. Processar AÃ§Ãµes (Fazer CafÃ© ou Comprar PÃ³)
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['acao'])) {
         try {
-            // --- AÇÕES DE FAZER CAFÉ ---
+            // --- AÃ‡Ã•ES DE FAZER CAFÃ‰ ---
             if ($_POST['acao'] == 'add_cafe') {
                 $pdo->prepare("UPDATE usuarios SET cafes_feitos = cafes_feitos + 1 WHERE id = :id")
                     ->execute([':id' => $user_id]);
-                $msg = "<div class='alert alert-success bg-success bg-opacity-25 text-success border-success'><i class='bi bi-check-circle-fill me-2'></i>☕ Café registrado!</div>";
+                $msg = "<div class='alert alert-success bg-success bg-opacity-25 text-success border-success'><i class='bi bi-check-circle-fill me-2'></i>â˜• CafÃ© registrado!</div>";
             
             } elseif ($_POST['acao'] == 'remove_cafe') {
                 $pdo->prepare("UPDATE usuarios SET cafes_feitos = cafes_feitos - 1 WHERE id = :id AND cafes_feitos > 0")
                     ->execute([':id' => $user_id]);
-                $msg = "<div class='alert alert-warning bg-warning bg-opacity-10 text-warning border-warning'><i class='bi bi-dash-circle me-2'></i>Café removido.</div>";
+                $msg = "<div class='alert alert-warning bg-warning bg-opacity-10 text-warning border-warning'><i class='bi bi-dash-circle me-2'></i>CafÃ© removido.</div>";
             
-            // --- AÇÕES DE COMPRAR PÓ ---
+            // --- AÃ‡Ã•ES DE COMPRAR PÃ“ ---
             } elseif ($_POST['acao'] == 'add_compra') {
                 $pdo->prepare("UPDATE usuarios SET cafes_comprados = cafes_comprados + 1 WHERE id = :id")
                     ->execute([':id' => $user_id]);
-                $msg = "<div class='alert alert-info bg-info bg-opacity-25 text-info border-info'><i class='bi bi-bag-heart-fill me-2'></i>🛍️ Compra registrada! (+15 pts pendentes).</div>";
+                $msg = "<div class='alert alert-info bg-info bg-opacity-25 text-info border-info'><i class='bi bi-bag-heart-fill me-2'></i>ðŸ›ï¸ Compra registrada! (+15 pts pendentes).</div>";
 
             } elseif ($_POST['acao'] == 'remove_compra') {
                 $pdo->prepare("UPDATE usuarios SET cafes_comprados = cafes_comprados - 1 WHERE id = :id AND cafes_comprados > 0")
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// 3. Buscar Dados do Usuário
+// 3. Buscar Dados do UsuÃ¡rio
 $stmtMe = $pdo->prepare("SELECT nome, pontos, is_admin, cafes_feitos, cafes_comprados FROM usuarios WHERE id = :id");
 $stmtMe->execute([':id' => $user_id]);
 $usuario = $stmtMe->fetch(PDO::FETCH_ASSOC);
@@ -64,8 +64,8 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clube do Café</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
+    <title>Clube do CafÃ©</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>â˜•</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
@@ -98,13 +98,13 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
     <!-- Navbar -->
     <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top">
         <div class="d-flex align-items-center gap-3">
-            <span class="fs-5">Olá, <strong><?= htmlspecialchars($usuario['nome']) ?></strong></span>
+            <span class="fs-5">OlÃ¡, <strong><?= htmlspecialchars($usuario['nome']) ?></strong></span>
             <?php if (!empty($usuario['is_admin']) && $usuario['is_admin'] == 1): ?>
                 <a href="admin_cafe.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
             <?php endif; ?>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <a href="painel.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar</a>
+            <a href="../index.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar</a>
             <span class="saldo-badge me-2"><?= number_format($usuario['pontos'], 0, ',', '.') ?> pts</span>
         </div>
     </div>
@@ -113,30 +113,30 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
         <?= $msg ?>
 
         <div class="row g-4">
-            <!-- COLUNA ESQUERDA: Ações -->
+            <!-- COLUNA ESQUERDA: AÃ§Ãµes -->
             <div class="col-md-4">
                 
-                <!-- 1. Card FAZER CAFÉ -->
+                <!-- 1. Card FAZER CAFÃ‰ -->
                 <div class="card card-coffee text-center p-4 mb-4">
-                    <h5 class="text-white-50 mb-2"><i class="bi bi-cup-hot-fill me-2"></i>Cafés Passados</h5>
+                    <h5 class="text-white-50 mb-2"><i class="bi bi-cup-hot-fill me-2"></i>CafÃ©s Passados</h5>
                     <div class="big-number text-coffee" style="color: #ffcc80;">
                         <?= $usuario['cafes_feitos'] ?>
                     </div>
                     <hr class="border-secondary my-3">
                     
                     <button type="button" class="btn btn-coffee-add w-100 py-3 mb-2 rounded-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCafe" onclick="prepararModal('cafe')">
-                        <i class="bi bi-plus-circle-fill me-2"></i>FIZ CAFÉ (+3 pts)
+                        <i class="bi bi-plus-circle-fill me-2"></i>FIZ CAFÃ‰ (+3 pts)
                     </button>
 
                     <?php if($usuario['cafes_feitos'] > 0): ?>
-                        <form method="POST" onsubmit="return confirm('Remover 1 café?');">
+                        <form method="POST" onsubmit="return confirm('Remover 1 cafÃ©?');">
                             <input type="hidden" name="acao" value="remove_cafe">
                             <button class="btn btn-outline-danger btn-sm w-100 border-0"><i class="bi bi-dash-circle"></i> Diminuir</button>
                         </form>
                     <?php endif; ?>
                 </div>
 
-                <!-- 2. Card COMPRAR PÓ (NOVO) -->
+                <!-- 2. Card COMPRAR PÃ“ (NOVO) -->
                 <div class="card card-patron text-center p-4">
                     <h5 class="text-white-50 mb-2"><i class="bi bi-bag-check-fill me-2"></i>Pacotes Comprados</h5>
                     <div class="big-number" style="color: #FFD700;">
@@ -144,9 +144,9 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                     <hr class="border-secondary my-3">
                     
-                    <!-- Botão Modal Comprar (Texto Atualizado) -->
+                    <!-- BotÃ£o Modal Comprar (Texto Atualizado) -->
                     <button type="button" class="btn btn-buy-add w-100 py-3 mb-2 rounded-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCafe" onclick="prepararModal('compra')">
-                        <i class="bi bi-cart-plus-fill me-2"></i>COMPREI PÓ (+15 pts)
+                        <i class="bi bi-cart-plus-fill me-2"></i>COMPREI PÃ“ (+15 pts)
                     </button>
 
                     <?php if($usuario['cafes_comprados'] > 0): ?>
@@ -162,11 +162,11 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
             <!-- COLUNA DIREITA: Rankings -->
             <div class="col-md-8">
                 
-                <!-- Ranking 1: MESTRES DO CAFÉ -->
+                <!-- Ranking 1: MESTRES DO CAFÃ‰ -->
                 <div class="card card-coffee mb-4">
                     <div class="card-header bg-transparent border-0 pt-4 px-4">
-                        <h3 class="fw-bold text-white"><i class="bi bi-trophy-fill me-2 text-warning"></i>Mestres do Café</h3>
-                        <p class="text-secondary small">Quem coloca a mão na massa (ou na água quente).</p>
+                        <h3 class="fw-bold text-white"><i class="bi bi-trophy-fill me-2 text-warning"></i>Mestres do CafÃ©</h3>
+                        <p class="text-secondary small">Quem coloca a mÃ£o na massa (ou na Ã¡gua quente).</p>
                     </div>
                     <div class="card-body p-0 table-responsive">
                         <table class="table table-coffee table-dark table-hover mb-0 align-middle">
@@ -182,7 +182,7 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
                                     $isMe = ($r['nome'] == $usuario['nome']);
                                 ?>
                                 <tr style="<?= $isMe ? 'background: rgba(111,78,55,0.2)' : '' ?>">
-                                    <td class="ps-4 text-secondary fw-bold"><?= $pos++ ?>º</td>
+                                    <td class="ps-4 text-secondary fw-bold"><?= $pos++ ?>Âº</td>
                                     <td><?= htmlspecialchars($r['nome']) ?> <?= $isMe ? '<span class="badge bg-success ms-1">Eu</span>' : '' ?></td>
                                     <td class="text-end pe-4 fw-bold text-warning fs-5"><?= $r['cafes_feitos'] ?></td>
                                 </tr>
@@ -192,10 +192,10 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
                     </div>
                 </div>
 
-                <!-- Ranking 2: MECENAS DO CAFÉ -->
+                <!-- Ranking 2: MECENAS DO CAFÃ‰ -->
                 <div class="card card-patron">
                     <div class="card-header bg-transparent border-0 pt-4 px-4">
-                        <h3 class="fw-bold text-white"><i class="bi bi-gem me-2" style="color: #FFD700;"></i>Mecenas do Café</h3>
+                        <h3 class="fw-bold text-white"><i class="bi bi-gem me-2" style="color: #FFD700;"></i>Mecenas do CafÃ©</h3>
                         <p class="text-secondary small">Quem abre a carteira para manter o estoque em dia.</p>
                     </div>
                     <div class="card-body p-0 table-responsive">
@@ -209,13 +209,13 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
                             </thead>
                             <tbody>
                                 <?php if(count($rankingComprou) == 0): ?>
-                                    <tr><td colspan="3" class="text-center py-3 text-muted">Ainda ninguém registrou compras. Seja o primeiro!</td></tr>
+                                    <tr><td colspan="3" class="text-center py-3 text-muted">Ainda ninguÃ©m registrou compras. Seja o primeiro!</td></tr>
                                 <?php else: ?>
                                     <?php $pos=1; foreach($rankingComprou as $r): 
                                         $isMe = ($r['nome'] == $usuario['nome']);
                                     ?>
                                     <tr style="<?= $isMe ? 'background: rgba(255, 215, 0, 0.1)' : '' ?>">
-                                        <td class="ps-4 text-secondary fw-bold"><?= $pos++ ?>º</td>
+                                        <td class="ps-4 text-secondary fw-bold"><?= $pos++ ?>Âº</td>
                                         <td><?= htmlspecialchars($r['nome']) ?> <?= $isMe ? '<span class="badge bg-success ms-1">Eu</span>' : '' ?></td>
                                         <td class="text-end pe-4 fw-bold fs-5" style="color: #FFD700;"><?= $r['cafes_comprados'] ?></td>
                                     </tr>
@@ -230,12 +230,12 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
-    <!-- MODAL ÚNICO -->
+    <!-- MODAL ÃšNICO -->
     <div class="modal fade" id="modalCafe" tabindex="-1" data-bs-backdrop="static">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">Confirmar Ação</h5>
+                    <h5 class="modal-title" id="modalTitle">Confirmar AÃ§Ã£o</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center py-4">
@@ -269,13 +269,13 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
             input.classList.remove('is-valid');
 
             if (tipo === 'cafe') {
-                modalTitle.innerHTML = '<i class="bi bi-cup-hot-fill me-2"></i>Fiz Café';
+                modalTitle.innerHTML = '<i class="bi bi-cup-hot-fill me-2"></i>Fiz CafÃ©';
                 modalDesc.innerHTML = 'Para confirmar, digite <strong>CAFE</strong>:';
                 inputAcao.value = 'add_cafe';
                 input.placeholder = 'CAFE';
                 palavraCorreta = 'CAFE';
             } else {
-                modalTitle.innerHTML = '<i class="bi bi-cart-plus-fill me-2 text-warning"></i>Comprei Pó';
+                modalTitle.innerHTML = '<i class="bi bi-cart-plus-fill me-2 text-warning"></i>Comprei PÃ³';
                 modalDesc.innerHTML = 'Para confirmar, digite <strong>COMPRA</strong>:';
                 inputAcao.value = 'add_compra';
                 input.placeholder = 'COMPRA';

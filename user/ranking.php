@@ -1,12 +1,12 @@
-<?php
+﻿<?php
 // ranking.php - CLASSIFICAÇÃO GERAL (DARK MODE 🏆🌑)
 // VERSÃO: SEM TRAVAS DE SEGURANÇA
 session_start();
-require 'conexao.php';
+require '../core/conexao.php';
 
 // 1. Segurança básica
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: ../auth/login.php");
     exit;
 }
 
@@ -180,11 +180,11 @@ try {
         <div class="d-flex align-items-center gap-3">
             <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
             <?php if (!empty($meu_perfil['is_admin']) && $meu_perfil['is_admin'] == 1): ?>
-                <a href="admin.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
+                <a href="../admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
             <?php endif; ?>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <a href="painel.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+            <a href="../index.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
             <span class="saldo-badge me-2"><?= number_format($meu_perfil['pontos'], 0, ',', '.') ?> pts</span>
         </div>
     </div>

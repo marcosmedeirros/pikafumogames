@@ -1,251 +1,798 @@
-<?php
-// index.php - TELA DE LOGIN PRINCIPAL (DARK MODE 🌑)
-session_start();
-require 'conexao.php';
+﻿<?php
+/**
+ * INDEX.PHP - DASHBOARD PRINCIPAL 🚀
+ * 
+ * Mostra:
+ * - Cards dos Games disponíveis
+ * - Top 5 do Ranking Geral
+ * - Maiores Cafés feitos
+ * - Última aposta realizada
+ * - Atalhos rápidos
+ */
 
-// 1. Se já estiver logado, joga pro painel direto
-if (isset($_SESSION['user_id'])) {
-    if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1) {
-        header("Location: admin.php");
-    } else {
-        header("Location: painel.php");
-    }
+session_start();
+require 'core/conexao.php';
+
+// Segurança
+if (!isset($_SESSION['user_id'])) {
+    header("Location: auth/login.php");
     exit;
 }
 
-$erro = "";
-$sucesso = "";
+$user_id = $_SESSION['user_id'];
+$msg = isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : "";
+$erro = isset($_GET['erro']) ? htmlspecialchars($_GET['erro']) : "";
 
-// 2. Processa o Login ou Reset
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    
-    // A. RESETAR SENHA (SIMPLES)
-    if (isset($_POST['acao']) && $_POST['acao'] == 'reset_senha') {
-        $email_reset = trim($_POST['email_reset']);
-        
-        $stmt = $pdo->prepare("SELECT id FROM usuarios WHERE email = :email");
-        $stmt->execute([':email' => $email_reset]);
-        $user_reset = $stmt->fetch(PDO::FETCH_ASSOC);
+// 1. Dados do Usuário
+try {
+    $stmt = $pdo->prepare("SELECT nome, pontos, is_admin, cafes_feitos FROM usuarios WHERE id = :id");
+    $stmt->execute([':id' => $user_id]);
+    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    die("Erro ao carregar usuário: " . $e->getMessage());
+}
 
-        if ($user_reset) {
-            // Em produção, envie um e-mail. Aqui, vamos resetar para '123456' para facilitar.
-            $nova_senha_hash = password_hash('123456', PASSWORD_DEFAULT);
-            $pdo->prepare("UPDATE usuarios SET senha = :s WHERE id = :id")->execute([':s' => $nova_senha_hash, ':id' => $user_reset['id']]);
-            $sucesso = "Sua senha foi redefinida para: <strong>123456</strong>. Entre e troque-a imediatamente!";
-        } else {
-            $erro = "E-mail não encontrado no sistema.";
-        }
-    } 
-    // B. LOGIN PADRÃO
-    else {
-        $email = trim($_POST['email']);
-        $senha = trim($_POST['senha']);
+// 2. Top 5 Ranking Geral
+try {
+    $stmt = $pdo->query("
+        SELECT id, nome, pontos, (pontos - 50) as lucro_liquido 
+        FROM usuarios 
+        ORDER BY lucro_liquido DESC 
+        LIMIT 5
+    ");
+    $top_5_ranking = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $top_5_ranking = [];
+}
 
-        if (empty($email) || empty($senha)) {
-            $erro = "Preencha todos os campos.";
-        } else {
-            $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE email = :email");
-            $stmt->execute([':email' => $email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+// 3. Top 5 Maiores Cafés
+try {
+    $stmt = $pdo->query("
+        SELECT id, nome, cafes_feitos 
+        FROM usuarios 
+        WHERE cafes_feitos > 0 
+        ORDER BY cafes_feitos DESC 
+        LIMIT 5
+    ");
+    $top_5_cafes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $top_5_cafes = [];
+}
 
-            // Verifica senha (Hash ou Texto Puro para compatibilidade)
-            if ($user && (password_verify($senha, $user['senha']) || $user['senha'] == $senha || trim($user['senha']) == $senha)) {
-                
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['nome'] = $user['nome'];
-                $_SESSION['is_admin'] = $user['is_admin'];
-                
-                if($user['is_admin'] == 1) {
-                    header("Location: admin.php");
-                } else {
-                    header("Location: painel.php");
-                }
-                exit;
-            } else {
-                $erro = "E-mail ou senha incorretos.";
-            }
-        }
-    }
+// 4. Última Aposta do Usuário
+try {
+    $stmt = $pdo->prepare("
+        SELECT 
+            p.id,
+            p.valor,
+            p.odd_registrada,
+            p.data_palpite,
+            e.nome as evento_nome,
+            e.status as evento_status,
+            o.descricao as opcao_descricao
+        FROM palpites p
+        JOIN opcoes o ON p.opcao_id = o.id
+        JOIN eventos e ON o.evento_id = e.id
+        WHERE p.id_usuario = :uid
+        ORDER BY p.data_palpite DESC
+        LIMIT 1
+    ");
+    $stmt->execute([':uid' => $user_id]);
+    $ultima_aposta = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $ultima_aposta = null;
+}
+
+// 5. Eventos Abertos (count)
+try {
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM eventos WHERE status = 'aberta'");
+    $total_eventos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+} catch (PDOException $e) {
+    $total_eventos = 0;
+}
+
+// 6. Minhas Apostas Abertas (count)
+try {
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as total 
+        FROM palpites p
+        JOIN eventos e ON (SELECT evento_id FROM opcoes WHERE id = p.opcao_id) = e.id
+        WHERE p.id_usuario = :uid AND e.status = 'aberta'
+    ");
+    $stmt->execute([':uid' => $user_id]);
+    $minhas_apostas_abertas = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+} catch (PDOException $e) {
+    $minhas_apostas_abertas = 0;
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="pt-br" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Pikafumo Games</title>
+    <title>Painel de Apostas</title>
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
-        /* PADRÃO DARK MODE */
-        body, html { height: 100%; margin: 0; background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
-        .row-full { height: 100vh; width: 100%; margin: 0; }
-        
-        /* Lado Esquerdo (Banner) */
-        .left-side {
-            background: linear-gradient(135deg, #1e1e1e 0%, #000000 100%);
+        :root {
+            --primary-dark: #121212;
+            --secondary-dark: #1e1e1e;
+            --border-dark: #333;
+            --accent-green: #00e676;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--primary-dark);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #e0e0e0;
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar-custom {
+            background: linear-gradient(180deg, #1e1e1e 0%, #121212 100%);
+            border-bottom: 1px solid var(--border-dark);
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent-green), #76ff03);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .saldo-badge {
+            background-color: var(--accent-green);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 800;
+            font-size: 1.1em;
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
+        }
+
+        .admin-btn {
+            background-color: #ff6d00;
             color: white;
+            padding: 8px 18px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .admin-btn:hover {
+            background-color: #e65100;
+            box-shadow: 0 0 12px #ff6d00;
+            color: white;
+        }
+
+        /* ===== CONTAINER ===== */
+        .container-main {
+            padding: 40px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* ===== CARDS DE GAMES ===== */
+        .game-card {
+            background-color: var(--secondary-dark);
+            border: 1px solid var(--border-dark);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            padding: 50px;
-            border-right: 1px solid #333;
-        }
-        
-        /* Lado Direito (Formulário) */
-        .right-side {
-            background-color: #121212;
-            display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            height: 180px;
         }
-        
-        .login-card {
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 400px;
+            height: 100%;
+            background: linear-gradient(135deg, transparent, rgba(0, 230, 118, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .game-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 30px rgba(0, 230, 118, 0.15);
+            border-color: var(--accent-green);
+        }
+
+        .game-card:hover::before {
+            opacity: 1;
+        }
+
+        .game-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .game-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .game-subtitle {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* ===== DASHBOARD STATS ===== */
+        .stat-card {
+            background: linear-gradient(135deg, var(--secondary-dark), #2a2a2a);
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.1);
+        }
+
+        .stat-label {
+            color: #999;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-green);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.2;
+        }
+
+        /* ===== SEÇÕES ===== */
+        .section-title {
+            color: #999;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 40px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: var(--accent-green);
+            font-size: 1.2rem;
+        }
+
+        /* ===== RANKING TABLES ===== */
+        .ranking-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .ranking-card {
+            background-color: var(--secondary-dark);
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .ranking-card:hover {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.1);
+        }
+
+        .ranking-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--accent-green);
+            font-size: 1.1rem;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.95rem;
+        }
+
+        .ranking-item:last-child {
+            border-bottom: none;
+        }
+
+        .ranking-position {
+            font-weight: 800;
+            color: var(--accent-green);
+            min-width: 30px;
+        }
+
+        .ranking-name {
+            flex: 1;
+            margin: 0 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .ranking-value {
+            font-weight: 700;
+            color: #fff;
+            text-align: right;
+        }
+
+        /* Medal Icons */
+        .medal-1::before { content: '🥇'; margin-right: 5px; }
+        .medal-2::before { content: '🥈'; margin-right: 5px; }
+        .medal-3::before { content: '🥉'; margin-right: 5px; }
+        .medal-4::before { content: '4️⃣'; margin-right: 5px; }
+        .medal-5::before { content: '5️⃣'; margin-right: 5px; }
+
+        /* ===== ÚLTIMA APOSTA ===== */
+        .aposta-card {
+            background: linear-gradient(135deg, #1b5e20, #2e7d32);
+            border: 1px solid #558b2f;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .aposta-label {
+            color: #aed581;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .aposta-evento {
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .aposta-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .aposta-detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .aposta-detail-label {
+            color: #9ccc65;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .aposta-detail-value {
+            font-weight: 800;
+            font-size: 1.3rem;
+            color: #fff;
+            margin-top: 5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .status-aberta {
+            background-color: #ffd600;
+            color: #000;
+        }
+
+        .status-finalizada {
+            background-color: #4caf50;
+            color: #fff;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-play {
+            width: 100%;
+            padding: 12px 20px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, var(--accent-green), #76ff03);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-play:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
+            color: #000;
+            text-decoration: none;
+        }
+
+        .btn-play-secondary {
+            width: 100%;
+            padding: 12px 20px;
+            margin-top: 15px;
+            background-color: transparent;
+            color: var(--accent-green);
+            border: 2px solid var(--accent-green);
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-play-secondary:hover {
+            background-color: var(--accent-green);
+            color: #000;
+            text-decoration: none;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
             padding: 40px;
-            background: #1e1e1e;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #333;
+            background-color: var(--secondary-dark);
+            border: 1px dashed var(--border-dark);
+            border-radius: 12px;
+            margin: 20px 0;
         }
 
-        .brand-text { font-size: 2.5rem; font-weight: 800; margin-bottom: 20px; color: #ff6d00; text-shadow: 0 0 10px rgba(255, 109, 0, 0.3); }
-        .hero-text { font-size: 1.2rem; line-height: 1.6; opacity: 0.8; color: #aaa; }
-
-        /* Inputs Dark */
-        .form-control { 
-            background-color: #2b2b2b; border: 1px solid #444; color: #fff; 
+        .empty-icon {
+            font-size: 3rem;
+            opacity: 0.3;
+            margin-bottom: 10px;
         }
-        .form-control:focus { 
-            background-color: #2b2b2b; border-color: #00e676; color: #fff; box-shadow: 0 0 0 0.25rem rgba(0, 230, 118, 0.25); 
+
+        .empty-text {
+            color: #666;
+            font-size: 1.1rem;
         }
-        .form-label { color: #ccc; }
 
-        .btn-primary-custom {
-            background-color: #00e676; color: #000; font-weight: 800; border: none;
-            transition: 0.3s;
-        }
-        .btn-primary-custom:hover { background-color: #00c853; box-shadow: 0 0 15px rgba(0, 230, 118, 0.4); }
-
-        .link-support { color: #aaa; text-decoration: none; font-size: 0.9em; transition: 0.3s; cursor: pointer; }
-        .link-support:hover { color: #ff6d00; }
-
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
-            .row-full { height: auto; }
-            .left-side { padding: 40px 20px; text-align: center; border-right: none; border-bottom: 1px solid #333; }
-            .right-side { padding: 40px 20px; height: auto; }
+            .container-main {
+                padding: 20px 15px;
+            }
+
+            .section-title {
+                font-size: 0.8rem;
+            }
+
+            .stat-card {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .game-card {
+                height: 150px;
+            }
+
+            .game-icon {
+                font-size: 2.5rem;
+            }
+
+            .ranking-position {
+                min-width: 25px;
+            }
         }
-        
-        /* Modal Dark */
-        .modal-content { background-color: #1e1e1e; border: 1px solid #444; color: #e0e0e0; }
-        .modal-header { border-bottom: 1px solid #333; }
-        .modal-footer { border-top: 1px solid #333; }
+
     </style>
 </head>
 <body>
 
-    <div class="row row-full">
-        <!-- LADO ESQUERDO: Texto e Boas-vindas -->
-        <div class="col-md-6 left-side">
-            <div>
-                <h1 class="brand-text">Pikafumo Games 🎮</h1>
-                <p class="hero-text">
-                    Bem-vindo à plataforma oficial de entretenimento da equipe.<br><br>
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>Apostas Esportivas<br>
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>Xadrez PvP<br>
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>Desafios Diários (Termo & Memória)<br><br>
-                    <strong>Acerte mais, ganhe pontos e domine o ranking!</strong>
-                </p>
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar-custom d-flex justify-content-between align-items-center sticky-top">
+    <a href="#" class="brand-name">🎮 PIKAFUMO</a>
+    
+    <div class="d-flex align-items-center gap-3">
+        <div class="d-none d-md-flex align-items-center gap-2">
+            <span style="color: #999; font-size: 0.9rem;">Bem-vindo(a),</span>
+            <strong><?= htmlspecialchars($usuario['nome']) ?></strong>
+        </div>
+        
+        <?php if (!empty($usuario['is_admin']) && $usuario['is_admin'] == 1): ?>
+            <a href="admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
+        <?php endif; ?>
+        
+        <span class="saldo-badge">
+            <i class="bi bi-coin me-1"></i><?= number_format($usuario['pontos'], 0, ',', '.') ?> pts
+        </span>
+        
+        <a href="auth/logout.php" class="btn btn-sm btn-outline-danger border-0">
+            <i class="bi bi-box-arrow-right"></i>
+        </a>
+    </div>
+    </div>
+
+<!-- CONTAINER PRINCIPAL -->
+<div class="container-main">
+
+    <!-- MENSAGENS -->
+    <?php if($msg): ?>
+        <div class="alert alert-success border-0 bg-success bg-opacity-10 text-success mb-4 d-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-3" style="font-size: 1.3rem;"></i>
+            <div><?= $msg ?></div>
+        </div>
+    <?php endif; ?>
+
+    <?php if($erro): ?>
+        <div class="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger mb-4 d-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 1.3rem;"></i>
+            <div><?= $erro ?></div>
+        </div>
+    <?php endif; ?>
+
+    <!-- STATS RÁPIDAS -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label"><i class="bi bi-cash-stack me-2"></i>Eventos Abertos</div>
+                    <div class="stat-value"><?= $total_eventos ?></div>
+                </div>
+                <div class="stat-icon"><i class="bi bi-graph-up"></i></div>
             </div>
         </div>
+        <div class="col-md-6">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-label"><i class="bi bi-bookmark-fill me-2"></i>Minhas Apostas Abertas</div>
+                    <div class="stat-value"><?= $minhas_apostas_abertas ?></div>
+                </div>
+                <div class="stat-icon"><i class="bi bi-collection"></i></div>
+            </div>
+        </div>
+    </div>
 
-        <!-- LADO DIREITO: Formulário de Login -->
-        <div class="col-md-6 right-side">
-            <div class="login-card">
-                <h3 class="text-center mb-4 fw-bold text-white"><i class="bi bi-person-circle me-2"></i>Acessar Conta</h3>
-                
-                <?php if($erro): ?>
-                    <div class="alert alert-danger text-center p-2 small border-0 bg-danger bg-opacity-25 text-white">
-                        <i class="bi bi-exclamation-circle me-1"></i><?= $erro ?>
+    <!-- SEÇÃO: GAMES -->
+    <h6 class="section-title"><i class="bi bi-joystick"></i>Escolha um Jogo</h6>
+    
+    <div class="row g-3 mb-5">
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/index.php?game=flappy" class="game-card" style="--accent: #ff9800;">
+                <span class="game-icon">🐦</span>
+                <div class="game-title">Flappy Bird</div>
+                <div class="game-subtitle">Desvie dos canos</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/index.php?game=pinguim" class="game-card" style="--accent: #29b6f6;">
+                <span class="game-icon">🐧</span>
+                <div class="game-title">Pinguim Run</div>
+                <div class="game-subtitle">Corra e ganhe</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/index.php?game=xadrez" class="game-card" style="--accent: #9c27b0;">
+                <span class="game-icon">♛</span>
+                <div class="game-title">Xadrez PvP</div>
+                <div class="game-subtitle">Aposte pontos</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/index.php?game=memoria" class="game-card" style="--accent: #00bcd4;">
+                <span class="game-icon">🧠</span>
+                <div class="game-title">Memória</div>
+                <div class="game-subtitle">Desafio mental</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/index.php?game=cafe" class="game-card" style="--accent: #8d6e63;">
+                <span class="game-icon">☕</span>
+                <div class="game-title">Clube do Café</div>
+                <div class="game-subtitle">Registre cafés</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/index.php?game=termo" class="game-card" style="--accent: #4caf50;">
+                <span class="game-icon">📝</span>
+                <div class="game-title">Termo</div>
+                <div class="game-subtitle">Adivinhe a palavra</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="user/ranking.php" class="game-card" style="--accent: #ffc107;">
+                <span class="game-icon">🏆</span>
+                <div class="game-title">Ranking Geral</div>
+                <div class="game-subtitle">Veja os melhores</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/apostas.php" class="game-card" style="--accent: #e91e63;">
+                <span class="game-icon">💰</span>
+                <div class="game-title">Minhas Apostas</div>
+                <div class="game-subtitle">Histórico</div>
+            </a>
+        </div>
+    </div>
+
+    <!-- SEÇÃO: ÚLTIMA APOSTA -->
+    <?php if($ultima_aposta): ?>
+        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>Última Aposta</h6>
+        <div class="aposta-card">
+            <div class="aposta-label">Evento</div>
+            <div class="aposta-evento"><?= htmlspecialchars($ultima_aposta['evento_nome']) ?></div>
+            
+            <div class="aposta-details">
+                <div class="aposta-detail-item">
+                    <div class="aposta-detail-label">Opção</div>
+                    <div class="aposta-detail-value"><?= htmlspecialchars($ultima_aposta['opcao_descricao']) ?></div>
+                </div>
+                <div class="aposta-detail-item">
+                    <div class="aposta-detail-label">Valor</div>
+                    <div class="aposta-detail-value">$ <?= number_format($ultima_aposta['valor'], 2, ',', '.') ?></div>
+                </div>
+                <div class="aposta-detail-item">
+                    <div class="aposta-detail-label">Odd</div>
+                    <div class="aposta-detail-value"><?= number_format($ultima_aposta['odd_registrada'], 2) ?></div>
+                </div>
+                <div class="aposta-detail-item">
+                    <div class="aposta-detail-label">Possível Ganho</div>
+                    <div class="aposta-detail-value">$ <?= number_format($ultima_aposta['valor'] * $ultima_aposta['odd_registrada'], 2, ',', '.') ?></div>
+                </div>
+                <div class="aposta-detail-item">
+                    <div class="aposta-detail-label">Status</div>
+                    <div>
+                        <?php if($ultima_aposta['evento_status'] == 'aberta'): ?>
+                            <span class="status-badge status-aberta"><i class="bi bi-hourglass-split me-1"></i>Aberta</span>
+                        <?php else: ?>
+                            <span class="status-badge status-finalizada"><i class="bi bi-check-circle me-1"></i>Finalizada</span>
+                        <?php endif; ?>
                     </div>
-                <?php endif; ?>
+                </div>
+            </div>
 
-                <?php if($sucesso): ?>
-                    <div class="alert alert-success text-center p-2 small border-0 bg-success bg-opacity-25 text-white">
-                        <i class="bi bi-check-circle me-1"></i><?= $sucesso ?>
-                    </div>
-                <?php endif; ?>
+            <a href="games/apostas.php" class="btn-play-secondary">Ver todas as apostas</a>
+        </div>
+    <?php else: ?>
+        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>Última Aposta</h6>
+        <div class="empty-state">
+            <div class="empty-icon"><i class="bi bi-inbox"></i></div>
+            <div class="empty-text">Você ainda não fez nenhuma aposta</div>
+        </div>
+    <?php endif; ?>
 
-                <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">E-mail Corporativo</label>
-                        <input type="email" name="email" class="form-control form-control-lg" placeholder="seu@email.com" required>
-                    </div>
+    <!-- SEÇÃO: RANKINGS -->
+    <h6 class="section-title"><i class="bi bi-trophy"></i>Rankings</h6>
 
-                    <div class="mb-4">
-                        <label class="form-label">Senha</label>
-                        <input type="password" name="senha" class="form-control form-control-lg" placeholder="******" required>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary-custom btn-lg w-100 mb-3">ENTRAR</button>
-                    
-                    <div class="text-center border-top border-secondary pt-3 mt-3 d-flex flex-column gap-2">
-                        <span class="link-support" data-bs-toggle="modal" data-bs-target="#modalSuporte">
-                            <i class="bi bi-question-circle me-1"></i>Esqueci a senha / Trocar E-mail
+    <div class="ranking-container">
+        <!-- TOP 5 RANKING GERAL -->
+        <div class="ranking-card">
+            <div class="ranking-title"><i class="bi bi-fire me-2"></i>Top 5 Geral</div>
+            <?php if(empty($top_5_ranking)): ?>
+                <div class="text-center py-3">
+                    <small class="text-secondary">Sem dados ainda</small>
+                </div>
+            <?php else: ?>
+                <?php foreach($top_5_ranking as $idx => $jogador): ?>
+                    <div class="ranking-item medal-<?= $idx+1 ?>">
+                        <span class="ranking-position"><?= $idx+1 ?></span>
+                        <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
+                        <span class="ranking-value">
+                            <?= number_format($jogador['lucro_liquido'], 0, ',', '.') ?> pts
                         </span>
-                        
-                        <a href="registrar.php" class="btn btn-outline-light btn-sm fw-bold w-100 mt-2">Criar Conta Nova</a>
                     </div>
-                </form>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+
+        <!-- TOP 5 CAFÉS -->
+        <div class="ranking-card">
+            <div class="ranking-title"><i class="bi bi-cup-hot-fill me-2"></i>Top Cafés</div>
+            <?php if(empty($top_5_cafes)): ?>
+                <div class="text-center py-3">
+                    <small class="text-secondary">Sem dados ainda</small>
+                </div>
+            <?php else: ?>
+                <?php foreach($top_5_cafes as $idx => $jogador): ?>
+                    <div class="ranking-item medal-<?= $idx+1 ?>">
+                        <span class="ranking-position"><?= $idx+1 ?></span>
+                        <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
+                        <span class="ranking-value">
+                            <i class="bi bi-cup-hot"></i> <?= $jogador['cafes_feitos'] ?>
+                        </span>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+
+        <!-- MINHAS STATS -->
+        <div class="ranking-card">
+            <div class="ranking-title"><i class="bi bi-person-circle me-2"></i>Minhas Stats</div>
+            <div class="ranking-item">
+                <span class="ranking-position">💰</span>
+                <span class="ranking-name">Saldo Atual</span>
+                <span class="ranking-value"><?= number_format($usuario['pontos'], 0, ',', '.') ?></span>
+            </div>
+            <div class="ranking-item">
+                <span class="ranking-position">☕</span>
+                <span class="ranking-name">Cafés Feitos</span>
+                <span class="ranking-value"><?= $usuario['cafes_feitos'] ?? 0 ?></span>
+            </div>
+            <div class="ranking-item">
+                <span class="ranking-position">📊</span>
+                <span class="ranking-name">Apostas Ativas</span>
+                <span class="ranking-value"><?= $minhas_apostas_abertas ?></span>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DE SUPORTE -->
-    <div class="modal fade" id="modalSuporte" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title fw-bold text-warning"><i class="bi bi-life-preserver me-2"></i>Central de Ajuda</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Opção 1: Resetar Senha -->
-                    <h6 class="text-white mb-2"><i class="bi bi-key-fill me-2"></i>Esqueci minha senha</h6>
-                    <p class="text-muted small mb-2">Digite seu e-mail abaixo para resetar sua senha para o padrão <strong>123456</strong>.</p>
-                    <form method="POST" class="mb-4">
-                        <input type="hidden" name="acao" value="reset_senha">
-                        <div class="input-group mb-2">
-                            <input type="email" name="email_reset" class="form-control" placeholder="Digite seu e-mail" required>
-                            <button class="btn btn-warning fw-bold" type="submit">Resetar</button>
-                        </div>
-                    </form>
+</div>
 
-                    <hr class="border-secondary">
+<!-- Footer -->
+<div style="background-color: var(--secondary-dark); border-top: 1px solid var(--border-dark); padding: 20px; text-align: center; color: #666; margin-top: 60px;">
+    <small><i class="bi bi-heart-fill" style="color: #ff6b6b;"></i> Pikafumo Games © 2025 | Jogue Responsavelmente</small>
+</div>
 
-                    <!-- Opção 2: Trocar Email -->
-                    <h6 class="text-white mb-2"><i class="bi bi-envelope-arrow-up-fill me-2"></i>Trocar E-mail de Acesso</h6>
-                    <p class="text-secondary small">
-                        Por motivos de segurança, a troca de e-mail deve ser solicitada diretamente ao administrador do sistema.
-                    </p>
-                    <div class="alert alert-dark border-secondary d-flex align-items-center">
-                        <i class="bi bi-whatsapp fs-3 text-success me-3"></i>
-                        <div>
-                            <strong>Falar com Marcos Medeiros</strong><br>
-                            <span class="small text-muted">Admin do Sistema</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+</body>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

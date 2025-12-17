@@ -1,13 +1,13 @@
-<?php
+﻿<?php
 // historico.php - MEU HISTÓRICO DE APOSTAS (CORRIGIDO: ODD HISTÓRICA 🔒)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
-require 'conexao.php';
+require '../core/conexao.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: ../auth/login.php");
     exit;
 }
 
@@ -97,12 +97,12 @@ $meus_palpites = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="d-flex align-items-center gap-3">
         <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
         <?php if (!empty($meu_perfil['is_admin']) && $meu_perfil['is_admin'] == 1): ?>
-            <a href="admin.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
+            <a href="../admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
         <?php endif; ?>
     </div>
     
     <div class="d-flex align-items-center gap-3">
-        <a href="painel.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+        <a href="../index.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
         <span class="saldo-badge me-2"><?= number_format($meu_perfil['pontos'], 0, ',', '.') ?> pts</span>
     </div>
 </div>
@@ -118,7 +118,7 @@ $meus_palpites = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="text-center p-5">
                     <i class="bi bi-ticket-perforated text-secondary" style="font-size: 4rem;"></i>
                     <p class="text-secondary mt-3 fs-5">Você ainda não fez nenhuma aposta.</p>
-                    <a href="painel.php" class="btn btn-success mt-2 fw-bold">Fazer minha primeira aposta</a>
+                    <a href="../index.php" class="btn btn-success mt-2 fw-bold">Fazer minha primeira aposta</a>
                 </div>
             <?php else: ?>
                 <div class="table-responsive">

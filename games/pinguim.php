@@ -1,16 +1,16 @@
-<?php
-// pinguim.php - CORRIDA DO PINGUIM RADICAL (DARK MODE 🐧🛹)
-// VERSÃO: SEM TRAVAS DE SEGURANÇA (Modo Desenvolvimento)
+﻿<?php
+// pinguim.php - CORRIDA DO PINGUIM RADICAL (DARK MODE ðŸ§ðŸ›¹)
+// VERSÃƒO: SEM TRAVAS DE SEGURANÃ‡A (Modo Desenvolvimento)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 session_start();
-require 'conexao.php';
+require '../core/conexao.php';
 
-// 1. Segurança Básica
-if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; }
+// 1. SeguranÃ§a BÃ¡sica
+if (!isset($_SESSION['user_id'])) { header("Location: auth/login.php"); exit; }
 $user_id = $_SESSION['user_id'];
 
-// --- AUTOMATIZAÇÃO DO BANCO DE DADOS PARA SKINS ---
+// --- AUTOMATIZAÃ‡ÃƒO DO BANCO DE DADOS PARA SKINS ---
 try {
     // Tabela de compras
     $pdo->exec("CREATE TABLE IF NOT EXISTS compras_skins (
@@ -30,7 +30,7 @@ try {
     die("Erro DB Skins: " . $e->getMessage());
 }
 
-// 2. Dados do Usuário e Skins
+// 2. Dados do UsuÃ¡rio e Skins
 try {
     $stmtMe = $pdo->prepare("SELECT nome, pontos, is_admin, skin_equipada FROM usuarios WHERE id = :id");
     $stmtMe->execute([':id' => $user_id]);
@@ -55,13 +55,13 @@ try {
     $minhas_skins = [];
 }
 
-// DEFINIÇÃO DAS SKINS (Configuração PHP - Preço e Emoji)
+// DEFINIÃ‡ÃƒO DAS SKINS (ConfiguraÃ§Ã£o PHP - PreÃ§o e Emoji)
 $catalogo_skins = [
-    'porco'   => ['nome' => 'Porco',   'emoji' => '🐷', 'preco' => 10],
-    'peixe'   => ['nome' => 'Peixe',   'emoji' => '🐟', 'preco' => 20],
-    'galinha' => ['nome' => 'Galinha', 'emoji' => '🐔', 'preco' => 30],
-    'boi'     => ['nome' => 'Boi',     'emoji' => '🐂', 'preco' => 40],
-    'morcego' => ['nome' => 'Morcego', 'emoji' => '🦇', 'preco' => 50]
+    'porco'   => ['nome' => 'Porco',   'emoji' => 'ðŸ·', 'preco' => 10],
+    'peixe'   => ['nome' => 'Peixe',   'emoji' => 'ðŸŸ', 'preco' => 20],
+    'galinha' => ['nome' => 'Galinha', 'emoji' => 'ðŸ”', 'preco' => 30],
+    'boi'     => ['nome' => 'Boi',     'emoji' => 'ðŸ‚', 'preco' => 40],
+    'morcego' => ['nome' => 'Morcego', 'emoji' => 'ðŸ¦‡', 'preco' => 50]
 ];
 
 // --- API AJAX (Sem Token CSRF) ---
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     // A. COMPRAR SKIN
     if ($_POST['acao'] == 'comprar_skin') {
         $skin = $_POST['skin'];
-        if (!isset($catalogo_skins[$skin])) die(json_encode(['erro' => 'Skin inválida']));
+        if (!isset($catalogo_skins[$skin])) die(json_encode(['erro' => 'Skin invÃ¡lida']));
         $preco = $catalogo_skins[$skin]['preco'];
         
         try {
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
             $stmtCheck = $pdo->prepare("SELECT id FROM compras_skins WHERE id_usuario = :uid AND skin = :skin");
             $stmtCheck->execute([':uid' => $user_id, ':skin' => $skin]);
-            if ($stmtCheck->rowCount() > 0) throw new Exception("Você já possui esta skin!");
+            if ($stmtCheck->rowCount() > 0) throw new Exception("VocÃª jÃ¡ possui esta skin!");
 
             $pdo->prepare("UPDATE usuarios SET pontos = pontos - :val WHERE id = :id")->execute([':val' => $preco, ':id' => $user_id]);
             $pdo->prepare("INSERT INTO compras_skins (id_usuario, skin) VALUES (:uid, :skin)")->execute([':uid' => $user_id, ':skin' => $skin]);
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         $stmtCheck = $pdo->prepare("SELECT id FROM compras_skins WHERE id_usuario = :uid AND skin = :skin");
         $stmtCheck->execute([':uid' => $user_id, ':skin' => $skin]);
         
-        if ($skin !== 'default' && $stmtCheck->rowCount() == 0) { echo json_encode(['erro' => 'Skin não adquirida.']); exit; }
+        if ($skin !== 'default' && $stmtCheck->rowCount() == 0) { echo json_encode(['erro' => 'Skin nÃ£o adquirida.']); exit; }
 
         $pdo->prepare("UPDATE usuarios SET skin_equipada = :skin WHERE id = :id")->execute([':skin' => $skin, ':id' => $user_id]);
         echo json_encode(['sucesso' => true]);
@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pinguim Run - Pikafumo Games</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐧</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>ðŸ§</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
@@ -202,13 +202,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 <!-- Header -->
 <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top">
     <div class="d-flex align-items-center gap-3">
-        <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+        <span class="fs-5">OlÃ¡, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
         <?php if (!empty($meu_perfil['is_admin']) && $meu_perfil['is_admin'] == 1): ?>
-            <a href="admin.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
+            <a href="../admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
         <?php endif; ?>
     </div>
     <div class="d-flex align-items-center gap-3">
-        <a href="painel.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar</a>
+        <a href="../index.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar</a>
         <span class="saldo-badge" id="saldoDisplay"><?= number_format($meu_perfil['pontos'], 0, ',', '.') ?> pts</span>
     </div>
 </div>
@@ -231,13 +231,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             </div>
             
             <div class="overflow-auto" style="max-height: 300px;">
-                <!-- Padrão -->
+                <!-- PadrÃ£o -->
                 <div class="skin-card">
                     <div class="d-flex align-items-center">
-                        <span class="skin-emoji">🐧</span>
+                        <span class="skin-emoji">ðŸ§</span>
                         <div>
-                            <strong class="d-block text-white">Padrão</strong>
-                            <small class="text-muted">Clássico</small>
+                            <strong class="d-block text-white">PadrÃ£o</strong>
+                            <small class="text-muted">ClÃ¡ssico</small>
                         </div>
                     </div>
                     <?php if($meu_perfil['skin_equipada'] == 'default'): ?>
@@ -247,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                     <?php endif; ?>
                 </div>
 
-                <!-- Skins do Catálogo -->
+                <!-- Skins do CatÃ¡logo -->
                 <?php foreach($catalogo_skins as $key => $data): 
                     $tenho = in_array($key, $minhas_skins);
                     $equipado = ($meu_perfil['skin_equipada'] == $key);
@@ -281,9 +281,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         <!-- TELA INICIAL / GAME OVER -->
         <div id="start-msg">
             <div id="start-content">
-                <h1 class="text-white mb-0 display-4" id="logoEmoji">🐧🛹</h1>
+                <h1 class="text-white mb-0 display-4" id="logoEmoji">ðŸ§ðŸ›¹</h1>
                 <h3 class="text-white mb-2" id="msgTitle">PINGUIM SKATER</h3>
-                <p class="text-secondary mb-3" id="msgSubtitle">Pule os bugs e cafés!</p>
+                <p class="text-secondary mb-3" id="msgSubtitle">Pule os bugs e cafÃ©s!</p>
                 
                 <div id="actionButtons">
                     <button class="btn btn-success btn-lg fw-bold px-5 rounded-pill shadow mb-3" onclick="startGame()">
@@ -334,15 +334,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     const logoEmoji = document.getElementById('logoEmoji');
     const shopBtnContainer = document.getElementById('shopBtnContainer');
 
-    // --- CONFIGURAÇÃO ---
+    // --- CONFIGURAÃ‡ÃƒO ---
     // Adicionamos as CORES DO CORPO aqui no JavaScript
     const catalogoJS = {
-        'default': { emoji: '🐧', bodyColor: '#000000', bellyColor: '#FFFFFF' },
-        'porco':   { emoji: '🐷', bodyColor: '#f48fb1', bellyColor: '#f8bbd0' }, // Rosa
-        'peixe':   { emoji: '🐟', bodyColor: '#039be5', bellyColor: '#4fc3f7' }, // Azul
-        'galinha': { emoji: '🐔', bodyColor: '#eeeeee', bellyColor: '#ffffff' }, // Branco
-        'boi':     { emoji: '🐂', bodyColor: '#5d4037', bellyColor: '#8d6e63' }, // Marrom
-        'morcego': { emoji: '🦇', bodyColor: '#212121', bellyColor: '#424242' }  // Cinza Escuro
+        'default': { emoji: 'ðŸ§', bodyColor: '#000000', bellyColor: '#FFFFFF' },
+        'porco':   { emoji: 'ðŸ·', bodyColor: '#f48fb1', bellyColor: '#f8bbd0' }, // Rosa
+        'peixe':   { emoji: 'ðŸŸ', bodyColor: '#039be5', bellyColor: '#4fc3f7' }, // Azul
+        'galinha': { emoji: 'ðŸ”', bodyColor: '#eeeeee', bellyColor: '#ffffff' }, // Branco
+        'boi':     { emoji: 'ðŸ‚', bodyColor: '#5d4037', bellyColor: '#8d6e63' }, // Marrom
+        'morcego': { emoji: 'ðŸ¦‡', bodyColor: '#212121', bellyColor: '#424242' }  // Cinza Escuro
     };
     
     let currentSkin = '<?= $meu_perfil['skin_equipada'] ?>'; 
@@ -373,7 +373,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
     highScoreEl.innerText = Math.floor(highScore);
 
-    // --- FUNÇÕES DA LOJA ---
+    // --- FUNÃ‡Ã•ES DA LOJA ---
     function toggleShop() {
         if(shopModal.style.display === 'block') {
             shopModal.style.display = 'none';
@@ -465,7 +465,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
     function spawnObstacle() {
         let size = Math.random() * (55 - 35) + 35; 
-        let type = Math.random() > 0.5 ? '☕' : '💻'; 
+        let type = Math.random() > 0.5 ? 'â˜•' : 'ðŸ’»'; 
         let obstacle = { x: canvas.width + size, y: groundHeight - size + 5, w: 30, h: size, type: type };
         obstacles.push(obstacle);
     }
@@ -474,7 +474,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         ctx.save();
         ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5;
 
-        // Recupera configuração da skin atual (ou usa default)
+        // Recupera configuraÃ§Ã£o da skin atual (ou usa default)
         const skinConfig = catalogoJS[currentSkin] || catalogoJS['default'];
 
         // 1. DESENHA O SKATE (Igual para todos)
@@ -491,25 +491,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         ctx.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2); 
         ctx.fill();
         
-        // Barriga (Se for galinha ou outro muito claro, talvez não contraste bem, mas ok)
+        // Barriga (Se for galinha ou outro muito claro, talvez nÃ£o contraste bem, mas ok)
         ctx.fillStyle = skinConfig.bellyColor; 
         ctx.beginPath(); 
         ctx.ellipse(x + w/2 + 2, y + h/2 + 5, w/3, h/2.5, 0, 0, Math.PI * 2); 
         ctx.fill();
 
-        // Asa/Braço (Mesma cor do corpo)
+        // Asa/BraÃ§o (Mesma cor do corpo)
         ctx.fillStyle = skinConfig.bodyColor; 
         ctx.beginPath(); ctx.ellipse(x + 10, y + h/2 + 5, 5, 12, 0.5, 0, Math.PI * 2); ctx.fill();
         // Sombra da asa para destacar
         ctx.strokeStyle = "rgba(0,0,0,0.2)"; ctx.lineWidth = 1; ctx.stroke();
 
         if (currentSkin === 'default') {
-            // CABEÇA PADRÃO (Pinguim Original)
+            // CABEÃ‡A PADRÃƒO (Pinguim Original)
             ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(x + w/2 + 5, y + 10, 6, 0, Math.PI * 2); ctx.fill(); // Olho
             ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(x + w/2 + 7, y + 10, 2, 0, Math.PI * 2); ctx.fill(); // Pupila
             ctx.fillStyle = "#FF9800"; ctx.beginPath(); ctx.moveTo(x + w - 5, y + 15); ctx.lineTo(x + w + 5, y + 18); ctx.lineTo(x + w - 5, y + 21); ctx.fill(); // Bico
         } else {
-            // CABEÇA SKIN (Emoji Invertido)
+            // CABEÃ‡A SKIN (Emoji Invertido)
             let emoji = skinConfig.emoji;
             
             ctx.save();
@@ -517,7 +517,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             
-            // Ponto central da cabeça
+            // Ponto central da cabeÃ§a
             let headX = x + w/2 + 5; 
             let headY = y + 10;
             
@@ -640,7 +640,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         if(shopBtnContainer) shopBtnContainer.style.display = 'none';
 
         if (!hasRevived && currentSaldo >= 10) {
-            msgTitle.innerText = "BATIDA FEIA! 🤕";
+            msgTitle.innerText = "BATIDA FEIA! ðŸ¤•";
             msgSubtitle.innerHTML = `Putz, bateu! O que deseja fazer?`;
             
             actionButtons.innerHTML = `
@@ -689,8 +689,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         saveFinalScore(finalScore);
 
-        msgTitle.innerText = "FIM DE JOGO 💀";
-        msgSubtitle.innerHTML = `Você correu <strong class="text-white">${finalScore}m</strong>`;
+        msgTitle.innerText = "FIM DE JOGO ðŸ’€";
+        msgSubtitle.innerHTML = `VocÃª correu <strong class="text-white">${finalScore}m</strong>`;
         
         actionButtons.innerHTML = `
             <button class="btn btn-success btn-lg fw-bold px-5 rounded-pill shadow mb-3" onclick="startGame()">

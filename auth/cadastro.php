@@ -1,6 +1,6 @@
-<?php
+﻿<?php
 // cadastro.php
-require 'conexao.php';
+require '../core/conexao.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nome = $_POST['nome'];

@@ -1,14 +1,14 @@
-<?php
+﻿<?php
 // registrar.php - TELA DE REGISTRO (DARK MODE 🌑)
 session_start();
-require 'conexao.php';
+require '../core/conexao.php';
 
 $erro = "";
 $sucesso = "";
 
 // Se já estiver logado, redireciona
 if (isset($_SESSION['user_id'])) {
-    header("Location: painel.php");
+    header("Location: ../index.php");
     exit;
 }
 

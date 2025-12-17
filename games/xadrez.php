@@ -1,12 +1,12 @@
-<?php
-// xadrez.php - XADREZ COM LOBBY AUTOMÁTICO (REALTIME ⚡) E RANKING
+﻿<?php
+// xadrez.php - XADREZ COM LOBBY AUTOMÃTICO (REALTIME âš¡) E RANKING
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 session_start();
-require 'conexao.php';
+require '../core/conexao.php';
 
-// 1. Segurança e Dados do Usuário
-if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; }
+// 1. SeguranÃ§a e Dados do UsuÃ¡rio
+if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
 $user_id = $_SESSION['user_id'];
 
 try {
@@ -17,15 +17,15 @@ try {
     die("Erro perfil: " . $e->getMessage());
 }
 
-// --- 1. LÓGICA DE API (AJAX) ---
+// --- 1. LÃ“GICA DE API (AJAX) ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
-    header('Content-Type: application/json'); // Padrão JSON, exceto para HTML parcial
+    header('Content-Type: application/json'); // PadrÃ£o JSON, exceto para HTML parcial
     $acao = $_POST['acao'];
     $agora = time(); 
 
     try {
-        // G. ATUALIZAR LOBBY (NOVO! ⚡)
-        // Retorna o HTML da tabela atualizado para não precisar dar F5
+        // G. ATUALIZAR LOBBY (NOVO! âš¡)
+        // Retorna o HTML da tabela atualizado para nÃ£o precisar dar F5
         if ($acao == 'atualizar_lobby') {
             header('Content-Type: text/html; charset=utf-8'); // Muda header para HTML
             
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                     $status_class = ($p['status'] == 'andamento') ? 'bg-andamento' : 'bg-pendente';
                     $status_text = ucfirst($p['status']);
                     
-                    // Lógica do Botão
+                    // LÃ³gica do BotÃ£o
                     $botao = '';
                     if ($p['status'] == 'pendente' && $p['id_desafiado'] == $user_id) {
                         $botao = '<button onclick="aceitarDesafio('.$p['id'].')" class="btn btn-sm btn-success fw-bold shadow-sm"><i class="bi bi-check-lg me-1"></i>Aceitar</button>';
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                     </tr>";
                 }
             }
-            exit; // Encerra aqui para não retornar JSON
+            exit; // Encerra aqui para nÃ£o retornar JSON
         }
 
         // A. CRIAR DESAFIO
@@ -77,8 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             $oponente_id = $_POST['oponente'];
             $valor = (int)$_POST['valor'];
 
-            if ($valor <= 0) die(json_encode(['erro' => 'Valor inválido.']));
-            if ($oponente_id == $user_id) die(json_encode(['erro' => 'Não pode jogar contra si mesmo.']));
+            if ($valor <= 0) die(json_encode(['erro' => 'Valor invÃ¡lido.']));
+            if ($oponente_id == $user_id) die(json_encode(['erro' => 'NÃ£o pode jogar contra si mesmo.']));
 
             $pdo->beginTransaction();
             
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             $partida = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$partida || $partida['id_desafiado'] != $user_id || $partida['status'] != 'pendente') {
-                throw new Exception("Partida inválida.");
+                throw new Exception("Partida invÃ¡lida.");
             }
 
             $stmtUser = $pdo->prepare("SELECT pontos FROM usuarios WHERE id = :id");
@@ -133,10 +133,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             $stmt->execute([':id' => $partida_id]);
             $partida = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($partida['vez_de'] != $user_id) die(json_encode(['erro' => 'Não é sua vez!']));
+            if ($partida['vez_de'] != $user_id) die(json_encode(['erro' => 'NÃ£o Ã© sua vez!']));
             if ($partida['status'] != 'andamento') die(json_encode(['erro' => 'Jogo finalizado.']));
 
-            // Cálculo do tempo
+            // CÃ¡lculo do tempo
             $tempo_gasto = $agora - $partida['ultimo_movimento'];
             $tempo_gasto = max(0, $tempo_gasto);
 
@@ -205,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             $stmt->execute([':id' => $partida_id]);
             $partida = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($partida['status'] != 'andamento') die(json_encode(['erro' => 'Jogo já acabou.']));
+            if ($partida['status'] != 'andamento') die(json_encode(['erro' => 'Jogo jÃ¡ acabou.']));
 
             $tempo_passado = $agora - $partida['ultimo_movimento'];
             $perdeu = false;
@@ -224,10 +224,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 $pdo->prepare("UPDATE xadrez_partidas SET status = 'finalizada', vencedor = :v WHERE id = :id")->execute([':v' => $vencedor, ':id' => $partida_id]);
                 
                 $pdo->commit();
-                echo json_encode(['sucesso' => true, 'msg' => 'Tempo esgotado! Vitória decretada.']);
+                echo json_encode(['sucesso' => true, 'msg' => 'Tempo esgotado! VitÃ³ria decretada.']);
             } else {
                 $pdo->rollBack();
-                echo json_encode(['erro' => 'O tempo ainda não acabou no servidor.']);
+                echo json_encode(['erro' => 'O tempo ainda nÃ£o acabou no servidor.']);
             }
         }
 
@@ -239,8 +239,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             $stmt->execute([':id' => $partida_id]);
             $partida = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($partida['status'] != 'andamento') die(json_encode(['erro' => 'Jogo não está em andamento.']));
-            if ($user_id != $partida['id_desafiante'] && $user_id != $partida['id_desafiado']) die(json_encode(['erro' => 'Você não está neste jogo.']));
+            if ($partida['status'] != 'andamento') die(json_encode(['erro' => 'Jogo nÃ£o estÃ¡ em andamento.']));
+            if ($user_id != $partida['id_desafiante'] && $user_id != $partida['id_desafiado']) die(json_encode(['erro' => 'VocÃª nÃ£o estÃ¡ neste jogo.']));
 
             $vencedor = ($user_id == $partida['id_desafiante']) ? $partida['id_desafiado'] : $partida['id_desafiante'];
             $premio = $partida['valor_aposta'] * 2;
@@ -277,7 +277,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     exit;
 }
 
-// --- 2. DADOS DA PÁGINA (INICIAL) ---
+// --- 2. DADOS DA PÃGINA (INICIAL) ---
 $stmtUsers = $pdo->prepare("SELECT id, nome FROM usuarios WHERE id != :id");
 $stmtUsers->execute([':id' => $user_id]);
 $usuarios = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
@@ -295,7 +295,7 @@ $stmtGames = $pdo->prepare("
 $stmtGames->execute([':id' => $user_id]);
 $minhas_partidas = $stmtGames->fetchAll(PDO::FETCH_ASSOC);
 
-// 3. BUSCA RANKING DE VITÓRIAS NO XADREZ (NOVO 🏆)
+// 3. BUSCA RANKING DE VITÃ“RIAS NO XADREZ (NOVO ðŸ†)
 try {
     $stmtRankChess = $pdo->query("
         SELECT u.nome, COUNT(p.id) as vitorias 
@@ -329,14 +329,14 @@ if (isset($_GET['id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xadrez - Pikafumo Games</title>
     
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♟️</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>â™Ÿï¸</text></svg>">
 
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
-        /* PADRÃO DARK MODE */
+        /* PADRÃƒO DARK MODE */
         body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
         
         /* Navbar Padronizada */
@@ -394,14 +394,14 @@ if (isset($_GET['id'])) {
 <!-- Header Padronizado -->
 <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top mb-4">
     <div class="d-flex align-items-center gap-3">
-        <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+        <span class="fs-5">OlÃ¡, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
         <?php if (!empty($meu_perfil['is_admin']) && $meu_perfil['is_admin'] == 1): ?>
-            <a href="admin.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
+            <a href="../admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
         <?php endif; ?>
     </div>
     
     <div class="d-flex align-items-center gap-3">
-        <a href="painel.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+        <a href="../index.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
         <span class="saldo-badge me-2"><?= number_format($meu_perfil['pontos'], 0, ',', '.') ?> pts</span>
     </div>
 </div>
@@ -409,7 +409,7 @@ if (isset($_GET['id'])) {
 <div class="container py-4">
 
     <?php if ($jogo_ativo): ?>
-        <!-- ... (LÓGICA DO JOGO MANTIDA, SEM ALTERAÇÕES) ... -->
+        <!-- ... (LÃ“GICA DO JOGO MANTIDA, SEM ALTERAÃ‡Ã•ES) ... -->
         <?php 
             $sou_brancas = ($jogo_ativo['id_desafiante'] == $user_id);
             $orientacao = $sou_brancas ? 'white' : 'black';
@@ -438,7 +438,7 @@ if (isset($_GET['id'])) {
                 </div>
                 <div class="d-flex justify-content-between align-items-start mt-2 px-2">
                     <div class="text-start">
-                        <h5 class="m-0 text-success">Você</h5>
+                        <h5 class="m-0 text-success">VocÃª</h5>
                         <div id="capturedBottom" class="captured-pieces mt-1"></div>
                     </div>
                     <div id="timerBottom" class="timer-box"><?= gmdate("i:s", $sou_brancas ? $t_brancas : $t_pretas) ?></div>
@@ -446,13 +446,13 @@ if (isset($_GET['id'])) {
                 <div class="d-flex justify-content-between align-items-center mt-3 gap-2">
                     <div id="statusGame" class="alert alert-dark border-secondary py-2 fw-bold m-0 flex-grow-1 shadow-sm">Carregando...</div>
                     <?php if($jogo_ativo['status'] == 'andamento'): ?>
-                        <button onclick="desistir()" class="btn btn-outline-danger fw-bold shadow-sm">🏳️ Desistir</button>
+                        <button onclick="desistir()" class="btn btn-outline-danger fw-bold shadow-sm">ðŸ³ï¸ Desistir</button>
                     <?php endif; ?>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card card-dark h-100 mt-3 mt-md-0 shadow-lg">
-                    <div class="card-header card-header-dark fw-bold"><i class="bi bi-clock-history me-2"></i>Histórico da Partida</div>
+                    <div class="card-header card-header-dark fw-bold"><i class="bi bi-clock-history me-2"></i>HistÃ³rico da Partida</div>
                     <div class="card-body p-2 bg-dark bg-opacity-50" style="height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.9em;" id="pgnDisplay"></div>
                     <div class="card-footer card-header-dark text-muted small text-center">
                         <i class="bi bi-coin me-1 text-warning"></i>Valendo: <span class="text-success fw-bold"><?= number_format($jogo_ativo['valor_aposta'], 0, ',', '.') ?> pts</span>
@@ -487,7 +487,7 @@ if (isset($_GET['id'])) {
                                 <label class="fw-bold mb-1">Aposta (Pontos)</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-dark border-secondary text-secondary">$</span>
-                                    <input type="number" name="valor" class="form-control form-control-dark" min="10" placeholder="Mínimo 10" required>
+                                    <input type="number" name="valor" class="form-control form-control-dark" min="10" placeholder="MÃ­nimo 10" required>
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-success w-100 fw-bold shadow-sm">
@@ -497,7 +497,7 @@ if (isset($_GET['id'])) {
                     </div>
                 </div>
 
-                <!-- Card Ranking de Xadrez (NOVO 🏆) -->
+                <!-- Card Ranking de Xadrez (NOVO ðŸ†) -->
                 <div class="card card-dark shadow-lg">
                     <div class="card-header card-header-dark fw-bold text-info"><i class="bi bi-trophy-fill me-2"></i>Mestres do Xadrez</div>
                     <div class="card-body p-0">
@@ -508,20 +508,20 @@ if (isset($_GET['id'])) {
                                         <div class="d-flex align-items-center">
                                             <span class="me-2 fw-bold" style="width: 25px;">
                                                 <?php 
-                                                    if($i==0) echo '🥇';
-                                                    elseif($i==1) echo '🥈';
-                                                    elseif($i==2) echo '🥉';
+                                                    if($i==0) echo 'ðŸ¥‡';
+                                                    elseif($i==1) echo 'ðŸ¥ˆ';
+                                                    elseif($i==2) echo 'ðŸ¥‰';
                                                     else echo '<span class="text-secondary small">#'.($i+1).'</span>';
                                                 ?>
                                             </span>
                                             <span class="text-truncate" style="max-width: 150px;"><?= htmlspecialchars($r['nome']) ?></span>
                                         </div>
-                                        <span class="badge bg-dark border border-secondary text-info rounded-pill"><?= $r['vitorias'] ?> vitórias</span>
+                                        <span class="badge bg-dark border border-secondary text-info rounded-pill"><?= $r['vitorias'] ?> vitÃ³rias</span>
                                     </li>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <li class="list-group-item bg-transparent text-muted text-center py-3 border-secondary">
-                                    <small>Nenhuma vitória registrada ainda.</small>
+                                    <small>Nenhuma vitÃ³ria registrada ainda.</small>
                                 </li>
                             <?php endif; ?>
                         </ul>
@@ -541,7 +541,7 @@ if (isset($_GET['id'])) {
                                         <th class="ps-3">Contra</th>
                                         <th>Valor</th>
                                         <th>Status</th>
-                                        <th class="text-end pe-3">Ação</th>
+                                        <th class="text-end pe-3">AÃ§Ã£o</th>
                                     </tr>
                                 </thead>
                                 <tbody id="listaPartidas"> <!-- ID ADICIONADO PARA O AJAX -->
@@ -594,7 +594,7 @@ if (isset($_GET['id'])) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // --- LÓGICA DO LOBBY ---
+    // --- LÃ“GICA DO LOBBY ---
     $('#formDesafio').submit(function(e) {
         e.preventDefault();
         $.post('xadrez.php', $(this).serialize(), function(data) {
@@ -619,7 +619,7 @@ if (isset($_GET['id'])) {
     <?php endif; ?>
 
 
-    // --- LÓGICA DO JOGO ---
+    // --- LÃ“GICA DO JOGO ---
     <?php if ($jogo_ativo): ?>
     const gameId = <?= $jogo_ativo['id'] ?>;
     const orientation = '<?= $orientacao ?>';
@@ -672,7 +672,7 @@ if (isset($_GET['id'])) {
         var formattedPgn = pgn.replace(/([0-9]+\.)/g, '<br><strong>$1</strong>'); 
         $('#pgnDisplay').html(formattedPgn);
         
-        updateMaterial(); // Atualiza peças comidas
+        updateMaterial(); // Atualiza peÃ§as comidas
 
         if (game.turn() === 'w') {
             $('#timerBottom').toggleClass('active', orientation === 'white');
@@ -696,8 +696,8 @@ if (isset($_GET['id'])) {
             }
         }
 
-        let wCapturedHtml = ''; // Peças brancas capturadas (exibe pro Preto)
-        let bCapturedHtml = ''; // Peças pretas capturadas (exibe pro Branco)
+        let wCapturedHtml = ''; // PeÃ§as brancas capturadas (exibe pro Preto)
+        let bCapturedHtml = ''; // PeÃ§as pretas capturadas (exibe pro Branco)
 
         ['q', 'r', 'b', 'n', 'p'].forEach(type => {
             let wCount = start.w[type] - current.w[type];
@@ -720,10 +720,10 @@ if (isset($_GET['id'])) {
     }
 
     function desistir() {
-        if(!confirm('Tem certeza que deseja desistir? Você perderá os pontos apostados.')) return;
+        if(!confirm('Tem certeza que deseja desistir? VocÃª perderÃ¡ os pontos apostados.')) return;
         $.post('xadrez.php', {acao: 'desistir', id_partida: gameId}, function(data) {
             if(data.erro) alert(data.erro);
-            else { alert('Você desistiu da partida.'); window.location.href = 'xadrez.php'; }
+            else { alert('VocÃª desistiu da partida.'); window.location.href = 'xadrez.php'; }
         }, 'json');
     }
 

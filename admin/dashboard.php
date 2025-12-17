@@ -1,15 +1,15 @@
-<?php
+﻿<?php
 // admin.php - GERENCIADOR DE APOSTAS (DARK MODE PREMIUM 🌑)
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
-require 'conexao.php';
-require 'funcoes.php'; // Traz a função recalcularOdds()
+require '../core/conexao.php';
+require '../core/funcoes.php'; // Traz a função recalcularOdds()
 
 // --- 1. SEGURANÇA ---
-if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; }
+if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
 
 // Busca dados do admin para o Header
 $stmt = $pdo->prepare("SELECT is_admin, nome, pontos FROM usuarios WHERE id = :id");
@@ -283,7 +283,7 @@ foreach ($eventos as $key => $evt) {
     </div>
     
     <div class="d-flex align-items-center gap-3">
-        <a href="painel.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Site</a>
+        <a href="../index.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Site</a>
         <span class="saldo-badge me-2"><?= number_format($user['pontos'], 0, ',', '.') ?> pts</span>
     </div>
 </div>

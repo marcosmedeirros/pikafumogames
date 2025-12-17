@@ -1,22 +1,22 @@
-<?php
-// LIGA O MOSTRADOR DE ERROS (Remova em produção)
+﻿<?php
+// LIGA O MOSTRADOR DE ERROS (Remova em produÃ§Ã£o)
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// memoria.php - O JOGO DA MEMÓRIA RAM (COM PERSISTÊNCIA E DARK MODE 💾🌑) 🧠
+// memoria.php - O JOGO DA MEMÃ“RIA RAM (COM PERSISTÃŠNCIA E DARK MODE ðŸ’¾ðŸŒ‘) ðŸ§ 
 session_start();
-require 'conexao.php';
+require '../core/conexao.php';
 
-// --- CONFIGURAÇÕES ---
+// --- CONFIGURAÃ‡Ã•ES ---
 $PONTOS_VITORIA = 10;
 $LIMITE_MOVIMENTOS = 16; 
 
-// 1. Segurança
-if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; }
+// 1. SeguranÃ§a
+if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
 $user_id = $_SESSION['user_id'];
 
-// --- 2. DADOS DO USUÁRIO (PARA O HEADER) ---
+// --- 2. DADOS DO USUÃRIO (PARA O HEADER) ---
 try {
     $stmtMe = $pdo->prepare("SELECT nome, pontos, is_admin FROM usuarios WHERE id = :id");
     $stmtMe->execute([':id' => $user_id]);
@@ -25,9 +25,9 @@ try {
     die("Erro perfil: " . $e->getMessage());
 }
 
-// --- FUNÇÕES DO JOGO ---
+// --- FUNÃ‡Ã•ES DO JOGO ---
 function gerarTabuleiroNovo() {
-    $emojis = ['🚀', '🐛', '☕', '💻', '📅', '📊', '🔥', '💡'];
+    $emojis = ['ðŸš€', 'ðŸ›', 'â˜•', 'ðŸ’»', 'ðŸ“…', 'ðŸ“Š', 'ðŸ”¥', 'ðŸ’¡'];
     $cards = array_merge($emojis, $emojis);
     shuffle($cards);
     $tabuleiro = [];
@@ -54,12 +54,12 @@ try {
         $dados_jogo = $stmt->fetch(PDO::FETCH_ASSOC);
     }
 } catch (PDOException $e) {
-    die("<div class='alert alert-danger'>Erro Crítico: Tabela memoria_historico faltando.</div>");
+    die("<div class='alert alert-danger'>Erro CrÃ­tico: Tabela memoria_historico faltando.</div>");
 }
 
 $tabuleiro_atual = (!empty($dados_jogo['estado_jogo'])) ? json_decode($dados_jogo['estado_jogo'], true) : null;
 
-// FIX CORRUPÇÃO
+// FIX CORRUPÃ‡ÃƒO
 if (!is_array($tabuleiro_atual)) {
     $tabuleiro_atual = gerarTabuleiroNovo();
     if (isset($dados_jogo['id'])) {
@@ -70,11 +70,11 @@ if (!is_array($tabuleiro_atual)) {
 $movimentos_atuais = $dados_jogo['movimentos'] ?? 0;
 $status_atual = $dados_jogo['status'] ?? 'jogando'; 
 
-// --- API DE ATUALIZAÇÃO (AJAX) ---
+// --- API DE ATUALIZAÃ‡ÃƒO (AJAX) ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     header('Content-Type: application/json');
 
-    if ($status_atual !== 'jogando') { echo json_encode(['erro' => 'Jogo já finalizado.']); exit; }
+    if ($status_atual !== 'jogando') { echo json_encode(['erro' => 'Jogo jÃ¡ finalizado.']); exit; }
 
     if ($_POST['acao'] == 'atualizar_estado') {
         $novos_movimentos = (int)$_POST['movimentos'];
@@ -118,16 +118,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memória RAM - Pikafumo Games</title>
+    <title>MemÃ³ria RAM - Pikafumo Games</title>
     
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>ðŸ§ </text></svg>">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
-        /* PADRÃO DARK MODE */
+        /* PADRÃƒO DARK MODE */
         body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
         
         /* Navbar Padronizada */
@@ -204,37 +204,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 <!-- Header Padronizado -->
 <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top">
     <div class="d-flex align-items-center gap-3">
-        <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+        <span class="fs-5">OlÃ¡, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
         <?php if (!empty($meu_perfil['is_admin']) && $meu_perfil['is_admin'] == 1): ?>
-            <a href="admin.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
+            <a href="../admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
         <?php endif; ?>
     </div>
     
     <div class="d-flex align-items-center gap-3">
-        <a href="painel.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+        <a href="../index.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
         <span class="saldo-badge me-2"><?= number_format($meu_perfil['pontos'], 0, ',', '.') ?> pts</span>
     </div>
 </div>
 
 <div class="container game-container text-center mt-3">
     
-    <h3 class="mb-4 text-info fw-bold"><i class="bi bi-cpu-fill me-2"></i>MEMÓRIA RAM</h3>
+    <h3 class="mb-4 text-info fw-bold"><i class="bi bi-cpu-fill me-2"></i>MEMÃ“RIA RAM</h3>
 
     <?php if($status_atual == 'venceu'): ?>
         <div class="alert alert-success mt-5 p-5 shadow-lg border-0 bg-success bg-opacity-25 text-white">
-            <h1 class="display-1">🧠🏆</h1>
-            <h3 class="mt-3">Missão Cumprida!</h3>
-            <p class="lead">Você completou o desafio em <strong><?= $dados_jogo['movimentos'] ?></strong> movimentos.</p>
+            <h1 class="display-1">ðŸ§ ðŸ†</h1>
+            <h3 class="mt-3">MissÃ£o Cumprida!</h3>
+            <p class="lead">VocÃª completou o desafio em <strong><?= $dados_jogo['movimentos'] ?></strong> movimentos.</p>
             <p>Pontos creditados: <strong>+<?= $PONTOS_VITORIA ?></strong></p>
-            <a href="painel.php" class="btn btn-outline-light btn-lg mt-3 fw-bold">Voltar ao Painel</a>
+            <a href="../index.php" class="btn btn-outline-light btn-lg mt-3 fw-bold">Voltar ao Painel</a>
         </div>
     <?php elseif($status_atual == 'perdeu'): ?>
         <div class="alert alert-danger mt-5 p-5 shadow-lg border-0 bg-danger bg-opacity-25 text-white">
-            <h1 class="display-1">💥💻</h1>
+            <h1 class="display-1">ðŸ’¥ðŸ’»</h1>
             <h3 class="mt-3">System Overload!</h3>
-            <p class="lead">Você estourou o limite de <strong><?= $LIMITE_MOVIMENTOS ?></strong> movimentos.</p>
-            <p>Tente novamente amanhã.</p>
-            <a href="painel.php" class="btn btn-outline-light btn-lg mt-3 fw-bold">Voltar ao Painel</a>
+            <p class="lead">VocÃª estourou o limite de <strong><?= $LIMITE_MOVIMENTOS ?></strong> movimentos.</p>
+            <p>Tente novamente amanhÃ£.</p>
+            <a href="../index.php" class="btn btn-outline-light btn-lg mt-3 fw-bold">Voltar ao Painel</a>
         </div>
     <?php else: ?>
 

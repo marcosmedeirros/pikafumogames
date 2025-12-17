@@ -1,14 +1,14 @@
-<?php
+﻿<?php
 // index.php - TELA DE LOGIN PRINCIPAL
 session_start();
-require 'conexao.php';
+require '../core/conexao.php';
 
 // 1. Se já estiver logado, joga pro painel direto
 if (isset($_SESSION['user_id'])) {
     if (isset($_SESSION['is_admin']) && $_SESSION['is_admin'] == 1) {
-        header("Location: admin.php");
+        header("Location: ../admin/dashboard.php");
     } else {
-        header("Location: painel.php");
+        header("Location: ../index.php");
     }
     exit;
 }
@@ -55,9 +55,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             // Redireciona
             if($user['is_admin'] == 1) {
-                header("Location: admin.php");
+                header("Location: ../admin/dashboard.php");
             } else {
-                header("Location: painel.php");
+                header("Location: ../index.php");
             }
             exit;
         } else {

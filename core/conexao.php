@@ -1,5 +1,5 @@
 <?php
-// conexao.php
+// core/conexao.php
 
 $host = 'localhost';
 $dbname = 'u289267434_lumacio';

@@ -1,14 +1,14 @@
-<?php
+﻿<?php
 // admin_cafe.php - SISTEMA DE PAGAMENTO DE PONTOS (DARK MODE 🌑)
 // VERSÃO: SEM TRAVAS DE SEGURANÇA
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
-require 'conexao.php';
+require '../core/conexao.php';
 
 // 1. Segurança Admin
-if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; }
+if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
 $stmt = $pdo->prepare("SELECT is_admin, nome, pontos FROM usuarios WHERE id = :id");
 $stmt->execute([':id' => $_SESSION['user_id']]);
 $user = $stmt->fetch();
