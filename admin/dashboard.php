@@ -476,7 +476,10 @@ function prepararEdicao(evento) {
     document.getElementById('acaoInput').value = 'editar_evento';
     document.getElementById('idEventoInput').value = evento.id;
     document.getElementById('nomeEventoInput').value = evento.nome;
-    document.getElementById('dataLimiteInput').value = evento.data_limite;
+    
+    // Converte MySQL datetime (YYYY-MM-DD HH:MM:SS) para HTML datetime-local (YYYY-MM-DDTHH:MM)
+    let dataFormatada = evento.data_limite.replace(' ', 'T').substring(0, 16);
+    document.getElementById('dataLimiteInput').value = dataFormatada;
 
     const container = document.getElementById('container-opcoes');
     container.innerHTML = ''; 
