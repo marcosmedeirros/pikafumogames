@@ -12,6 +12,7 @@
 
 session_start();
 require 'core/conexao.php';
+require 'core/avatar.php';
 
 // Segurança
 if (!isset($_SESSION['user_id'])) {
@@ -31,6 +32,9 @@ try {
 } catch (PDOException $e) {
     die("Erro ao carregar usuário: " . $e->getMessage());
 }
+
+// Carregar customização de avatar
+$avatar_customizacao = obterCustomizacaoAvatar($pdo, $user_id);
 
 // 2. Top 5 Ranking Geral
 try {
@@ -114,6 +118,7 @@ try {
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="assets/avatar.css">
     
     <style>
         :root {
@@ -503,6 +508,49 @@ try {
             font-size: 1.1rem;
         }
 
+        /* ===== AVATAR STYLES ===== */
+        .avatar-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .avatar-micro {
+            width: 40px;
+            height: 56px;
+            flex-shrink: 0;
+        }
+
+        .avatar-mini {
+            width: 48px;
+            height: 67.2px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .avatar-medio {
+            width: 120px;
+            height: 168px;
+        }
+
+        .avatar-full {
+            width: 256px;
+            height: 358.4px;
+        }
+
+        .cyber-avatar {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 5px rgba(0, 230, 118, 0.2));
+            transition: filter 0.3s;
+        }
+
+        .avatar-container:hover .cyber-avatar {
+            filter: drop-shadow(0 0 10px rgba(0, 230, 118, 0.5));
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .container-main {
@@ -543,9 +591,14 @@ try {
     <a href="#" class="brand-name">🎮 PIKAFUMO</a>
     
     <div class="d-flex align-items-center gap-3">
-        <div class="d-none d-md-flex align-items-center gap-2">
-            <span style="color: #999; font-size: 0.9rem;">Bem-vindo(a),</span>
-            <strong><?= htmlspecialchars($usuario['nome']) ?></strong>
+        <div class="d-none d-md-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <?= avatarHTML($avatar_customizacao, 'micro') ?>
+                <div>
+                    <span style="color: #999; font-size: 0.9rem;">Bem-vindo(a),</span>
+                    <strong><?= htmlspecialchars($usuario['nome']) ?></strong>
+                </div>
+            </div>
         </div>
         
         <?php if (!empty($usuario['is_admin']) && $usuario['is_admin'] == 1): ?>
@@ -647,6 +700,16 @@ try {
                 <div class="game-subtitle">Faça suas apostas agora</div>
             </a>
         </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/index.php?game=avatar" class="game-card" style="--accent: #9d4edd;">
+                <span class="game-icon">🤖</span>
+                <div class="game-title">Avatar</div>
+                <div class="game-subtitle">Customizar seu avatar</div>
+            </a>
+        </div>
+
+        
     </div>
 
     <!-- SEÇÃO: MINHAS STATS (CARDS NO TOPO) -->
@@ -717,6 +780,10 @@ try {
                 <?php foreach($top_5_ranking as $idx => $jogador): ?>
                     <div class="ranking-item medal-<?= $idx+1 ?>">
                         <span class="ranking-position" aria-label="Posição <?= $idx+1 ?>"></span>
+                        <?php 
+                            $avatar_jogador = obterCustomizacaoAvatar($pdo, $jogador['id']);
+                            echo avatarHTML($avatar_jogador, 'mini');
+                        ?>
                         <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
                         <span class="ranking-value">
                             <?= number_format($jogador['lucro_liquido'], 0, ',', '.') ?> pts
@@ -737,9 +804,14 @@ try {
                 <?php foreach($top_5_cafes as $idx => $jogador): ?>
                     <div class="ranking-item medal-<?= $idx+1 ?>">
                         <span class="ranking-position" aria-label="Posição <?= $idx+1 ?>"></span>
+                        <?php 
+                            $avatar_jogador = obterCustomizacaoAvatar($pdo, $jogador['id']);
+                            echo avatarHTML($avatar_jogador, 'mini');
+                        ?>
                         <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
                         <span class="ranking-value">
                             <i class="bi bi-cup-hot"></i> <?= $jogador['cafes_feitos'] ?>
+                        </span>
                         </span>
                     </div>
                 <?php endforeach; ?>

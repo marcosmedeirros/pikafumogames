@@ -45,7 +45,12 @@ $games_disponiveis = [
     'apostas' => [
         'titulo' => '💰 Apostas',
         'arquivo' => 'apostas.php'
-    ]
+    ],
+    'avatar' => [
+        'titulo' => '🤖 Customizar Avatar',
+        'arquivo' => 'avatar.php'
+    ],
+    
 ];
 
 // Valida se o game existe

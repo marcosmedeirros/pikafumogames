@@ -3,6 +3,7 @@
 // VERSÃO: SEM TRAVAS DE SEGURANÇA
 session_start();
 require '../core/conexao.php';
+require '../core/avatar.php';
 
 // 1. Segurança básica
 if (!isset($_SESSION['user_id'])) {
@@ -178,7 +179,11 @@ try {
     <!-- Header -->
     <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top">
         <div class="d-flex align-items-center gap-3">
-            <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+            <?php $meu_avatar = obterCustomizacaoAvatar($pdo, $user_id); ?>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <?= avatarHTML($meu_avatar, 'micro') ?>
+                <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+            </div>
             <?php if (!empty($meu_perfil['is_admin']) && $meu_perfil['is_admin'] == 1): ?>
                 <a href="../admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
             <?php endif; ?>
@@ -234,8 +239,9 @@ try {
                         ?>
                             <div class="<?= $classe_linha ?>">
                                 <!-- Coluna Jogador -->
-                                <div class="d-flex align-items-center flex-grow-1 overflow-hidden">
+                                <div class="d-flex align-items-center flex-grow-1 overflow-hidden" style="gap:10px;">
                                     <?= $icone ?>
+                                    <?php $avatar_jogador = obterCustomizacaoAvatar($pdo, $user['id']); echo avatarHTML($avatar_jogador, 'mini'); ?>
                                     <span class="fs-6 text-white text-truncate">
                                         <?= htmlspecialchars($user['nome']) ?>
                                         
