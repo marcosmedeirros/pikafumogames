@@ -41,6 +41,10 @@ $games_disponiveis = [
     'termo' => [
         'titulo' => '📝 Termo',
         'arquivo' => 'termo.php'
+    ],
+    'apostas' => [
+        'titulo' => '💰 Apostas',
+        'arquivo' => 'apostas.php'
     ]
 ];
 

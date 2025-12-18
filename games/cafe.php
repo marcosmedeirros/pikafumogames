@@ -1,7 +1,7 @@
 ﻿<?php
-// cafe.php - CLUBE DO CAFÃ‰ (DARK MODE â˜•ðŸŒ‘)
-// VERSÃƒO: SEM TRAVAS DE SEGURANÃ‡A
-session_start();
+// cafe.php - CLUBE DO CAFÉ (DARK MODE ☕🌙)
+// VERSÃO: SEM TRAVAS DE SEGURANÇA
+// session_start já foi chamado em games/index.php
 require '../core/conexao.php';
 
 // 1. SeguranÃ§a de SessÃ£o

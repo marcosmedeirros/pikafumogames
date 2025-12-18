@@ -1,9 +1,9 @@
 ﻿<?php
-// pinguim.php - CORRIDA DO PINGUIM RADICAL (DARK MODE ðŸ§ðŸ›¹)
-// VERSÃƒO: SEM TRAVAS DE SEGURANÃ‡A (Modo Desenvolvimento)
+// pinguim.php - CORRIDA DO PINGUIM RADICAL (DARK MODE 🐧🛹)
+// VERSÃO: SEM TRAVAS DE SEGURANÇA (Modo Desenvolvimento)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-session_start();
+// session_start já foi chamado em games/index.php
 require '../core/conexao.php';
 
 // 1. SeguranÃ§a BÃ¡sica
@@ -55,13 +55,13 @@ try {
     $minhas_skins = [];
 }
 
-// DEFINIÃ‡ÃƒO DAS SKINS (ConfiguraÃ§Ã£o PHP - PreÃ§o e Emoji)
+// DEFINIÇÃO DAS SKINS (Configuração PHP - Preço e Emoji)
 $catalogo_skins = [
-    'porco'   => ['nome' => 'Porco',   'emoji' => 'ðŸ·', 'preco' => 10],
-    'peixe'   => ['nome' => 'Peixe',   'emoji' => 'ðŸŸ', 'preco' => 20],
-    'galinha' => ['nome' => 'Galinha', 'emoji' => 'ðŸ”', 'preco' => 30],
-    'boi'     => ['nome' => 'Boi',     'emoji' => 'ðŸ‚', 'preco' => 40],
-    'morcego' => ['nome' => 'Morcego', 'emoji' => 'ðŸ¦‡', 'preco' => 50]
+    'porco'   => ['nome' => 'Porco',   'emoji' => '🐷', 'preco' => 10],
+    'peixe'   => ['nome' => 'Peixe',   'emoji' => '🐟', 'preco' => 20],
+    'galinha' => ['nome' => 'Galinha', 'emoji' => '🐔', 'preco' => 30],
+    'boi'     => ['nome' => 'Boi',     'emoji' => '🐂', 'preco' => 40],
+    'morcego' => ['nome' => 'Morcego', 'emoji' => '🦇', 'preco' => 50]
 ];
 
 // --- API AJAX (Sem Token CSRF) ---
@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pinguim Run - Pikafumo Games</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>ðŸ§</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐧</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
@@ -234,10 +234,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 <!-- PadrÃ£o -->
                 <div class="skin-card">
                     <div class="d-flex align-items-center">
-                        <span class="skin-emoji">ðŸ§</span>
+                        <span class="skin-emoji">🐧</span>
                         <div>
-                            <strong class="d-block text-white">PadrÃ£o</strong>
-                            <small class="text-muted">ClÃ¡ssico</small>
+                            <strong class="d-block text-white">Padrão</strong>
+                            <small class="text-muted">Clássico</small>
                         </div>
                     </div>
                     <?php if($meu_perfil['skin_equipada'] == 'default'): ?>
@@ -281,9 +281,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         <!-- TELA INICIAL / GAME OVER -->
         <div id="start-msg">
             <div id="start-content">
-                <h1 class="text-white mb-0 display-4" id="logoEmoji">ðŸ§ðŸ›¹</h1>
+                <h1 class="text-white mb-0 display-4" id="logoEmoji">🐧🛹</h1>
                 <h3 class="text-white mb-2" id="msgTitle">PINGUIM SKATER</h3>
-                <p class="text-secondary mb-3" id="msgSubtitle">Pule os bugs e cafÃ©s!</p>
+                <p class="text-secondary mb-3" id="msgSubtitle">Pule os bugs e cafés!</p>
                 
                 <div id="actionButtons">
                     <button class="btn btn-success btn-lg fw-bold px-5 rounded-pill shadow mb-3" onclick="startGame()">
@@ -334,15 +334,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     const logoEmoji = document.getElementById('logoEmoji');
     const shopBtnContainer = document.getElementById('shopBtnContainer');
 
-    // --- CONFIGURAÃ‡ÃƒO ---
+    // --- CONFIGURAÇÃO ---
     // Adicionamos as CORES DO CORPO aqui no JavaScript
     const catalogoJS = {
-        'default': { emoji: 'ðŸ§', bodyColor: '#000000', bellyColor: '#FFFFFF' },
-        'porco':   { emoji: 'ðŸ·', bodyColor: '#f48fb1', bellyColor: '#f8bbd0' }, // Rosa
-        'peixe':   { emoji: 'ðŸŸ', bodyColor: '#039be5', bellyColor: '#4fc3f7' }, // Azul
-        'galinha': { emoji: 'ðŸ”', bodyColor: '#eeeeee', bellyColor: '#ffffff' }, // Branco
-        'boi':     { emoji: 'ðŸ‚', bodyColor: '#5d4037', bellyColor: '#8d6e63' }, // Marrom
-        'morcego': { emoji: 'ðŸ¦‡', bodyColor: '#212121', bellyColor: '#424242' }  // Cinza Escuro
+        'default': { emoji: '🐧', bodyColor: '#000000', bellyColor: '#FFFFFF' },
+        'porco':   { emoji: '🐷', bodyColor: '#f48fb1', bellyColor: '#f8bbd0' }, // Rosa
+        'peixe':   { emoji: '🐟', bodyColor: '#039be5', bellyColor: '#4fc3f7' }, // Azul
+        'galinha': { emoji: '🐔', bodyColor: '#eeeeee', bellyColor: '#ffffff' }, // Branco
+        'boi':     { emoji: '🐂', bodyColor: '#5d4037', bellyColor: '#8d6e63' }, // Marrom
+        'morcego': { emoji: '🦇', bodyColor: '#212121', bellyColor: '#424242' }  // Cinza Escuro
     };
     
     let currentSkin = '<?= $meu_perfil['skin_equipada'] ?>'; 
@@ -392,7 +392,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         fd.append('acao', 'comprar_skin');
         fd.append('skin', skinKey);
 
-        fetch('pinguim.php', { method: 'POST', body: fd })
+        fetch('index.php?game=pinguim', { method: 'POST', body: fd })
         .then(res => res.json())
         .then(data => {
             if(data.sucesso) {
@@ -409,7 +409,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         fd.append('acao', 'equipar_skin');
         fd.append('skin', skinKey);
 
-        fetch('pinguim.php', { method: 'POST', body: fd })
+        fetch('index.php?game=pinguim', { method: 'POST', body: fd })
         .then(res => res.json())
         .then(data => {
             if(data.sucesso) {
@@ -465,7 +465,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
     function spawnObstacle() {
         let size = Math.random() * (55 - 35) + 35; 
-        let type = Math.random() > 0.5 ? 'â˜•' : 'ðŸ’»'; 
+        let type = Math.random() > 0.5 ? '☕' : '💻'; 
         let obstacle = { x: canvas.width + size, y: groundHeight - size + 5, w: 30, h: size, type: type };
         obstacles.push(obstacle);
     }
@@ -640,7 +640,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         if(shopBtnContainer) shopBtnContainer.style.display = 'none';
 
         if (!hasRevived && currentSaldo >= 10) {
-            msgTitle.innerText = "BATIDA FEIA! ðŸ¤•";
+            msgTitle.innerText = "BATIDA FEIA! 🤕";
             msgSubtitle.innerHTML = `Putz, bateu! O que deseja fazer?`;
             
             actionButtons.innerHTML = `
@@ -660,7 +660,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         const formData = new FormData();
         formData.append('acao', 'gastar_moedas_reviver');
 
-        fetch('pinguim.php', { method: 'POST', body: formData })
+        fetch('index.php?game=pinguim', { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => {
             if(data.sucesso) {
@@ -689,8 +689,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         saveFinalScore(finalScore);
 
-        msgTitle.innerText = "FIM DE JOGO ðŸ’€";
-        msgSubtitle.innerHTML = `VocÃª correu <strong class="text-white">${finalScore}m</strong>`;
+        msgTitle.innerText = "FIM DE JOGO 💀";
+        msgSubtitle.innerHTML = `Você correu <strong class="text-white">${finalScore}m</strong>`;
         
         actionButtons.innerHTML = `
             <button class="btn btn-success btn-lg fw-bold px-5 rounded-pill shadow mb-3" onclick="startGame()">
@@ -709,7 +709,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         const formData = new FormData();
         formData.append('acao', 'salvar_milestone');
 
-        fetch('pinguim.php', { method: 'POST', body: formData })
+        fetch('index.php?game=pinguim', { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => {
             if(data.sucesso) {
@@ -727,7 +727,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         formData.append('acao', 'salvar_score');
         formData.append('score', finalScore);
 
-        fetch('pinguim.php', { method: 'POST', body: formData });
+        fetch('index.php?game=pinguim', { method: 'POST', body: formData });
     }
 
     function showFloatingText(text, x, y) {

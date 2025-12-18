@@ -59,28 +59,25 @@ try {
     $top_5_cafes = [];
 }
 
-// 4. Última Aposta do Usuário
+// 4. Último Evento Aberto (para exibir no card e no painel)
 try {
-    $stmt = $pdo->prepare("
-        SELECT 
-            p.id,
-            p.valor,
-            p.odd_registrada,
-            p.data_palpite,
-            e.nome as evento_nome,
-            e.status as evento_status,
-            o.descricao as opcao_descricao
-        FROM palpites p
-        JOIN opcoes o ON p.opcao_id = o.id
-        JOIN eventos e ON o.evento_id = e.id
-        WHERE p.id_usuario = :uid
-        ORDER BY p.data_palpite DESC
+    $stmt = $pdo->query("
+        SELECT e.id, e.nome, e.data_limite 
+        FROM eventos e 
+        WHERE e.status = 'aberta' AND e.data_limite > NOW() 
+        ORDER BY e.data_limite ASC 
         LIMIT 1
     ");
-    $stmt->execute([':uid' => $user_id]);
-    $ultima_aposta = $stmt->fetch(PDO::FETCH_ASSOC);
+    $ultimo_evento_aberto = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Busca opções do evento
+    if ($ultimo_evento_aberto) {
+        $stmtOpcoes = $pdo->prepare("SELECT id, descricao, odd FROM opcoes WHERE evento_id = :eid ORDER BY id ASC");
+        $stmtOpcoes->execute([':eid' => $ultimo_evento_aberto['id']]);
+        $ultimo_evento_aberto['opcoes'] = $stmtOpcoes->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 } catch (PDOException $e) {
-    $ultima_aposta = null;
+    $ultimo_evento_aberto = null;
 }
 
 // 5. Eventos Abertos (count)
@@ -583,28 +580,6 @@ try {
         </div>
     <?php endif; ?>
 
-    <!-- STATS RÁPIDAS -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="stat-card">
-                <div>
-                    <div class="stat-label"><i class="bi bi-cash-stack me-2"></i>Eventos Abertos</div>
-                    <div class="stat-value"><?= $total_eventos ?></div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-graph-up"></i></div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="stat-card">
-                <div>
-                    <div class="stat-label"><i class="bi bi-bookmark-fill me-2"></i>Minhas Apostas Abertas</div>
-                    <div class="stat-value"><?= $minhas_apostas_abertas ?></div>
-                </div>
-                <div class="stat-icon"><i class="bi bi-collection"></i></div>
-            </div>
-        </div>
-    </div>
-
     <!-- SEÇÃO: GAMES -->
     <h6 class="section-title"><i class="bi bi-joystick"></i>Escolha um Jogo</h6>
     
@@ -629,7 +604,7 @@ try {
             <a href="games/index.php?game=xadrez" class="game-card" style="--accent: #9c27b0;">
                 <span class="game-icon">♛</span>
                 <div class="game-title">Xadrez PvP</div>
-                <div class="game-subtitle">Aposte pontos</div>
+                <div class="game-subtitle">Desafie e aposte</div>
             </a>
         </div>
 
@@ -666,57 +641,43 @@ try {
         </div>
 
         <div class="col-6 col-md-4 col-lg-3">
-            <a href="games/apostas.php" class="game-card" style="--accent: #e91e63;">
+            <a href="games/index.php?game=apostas" class="game-card" style="--accent: #e91e63;">
                 <span class="game-icon">💰</span>
-                <div class="game-title">Minhas Apostas</div>
-                <div class="game-subtitle">Histórico</div>
+                <div class="game-title">Apostas</div>
+                <div class="game-subtitle">Faça suas apostas agora</div>
             </a>
         </div>
     </div>
 
-    <!-- SEÇÃO: ÚLTIMA APOSTA -->
-    <?php if($ultima_aposta): ?>
-        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>Última Aposta</h6>
+    <!-- SEÇÃO: ÚLTIMA APOSTA DISPONÍVEL -->
+    <?php if($ultimo_evento_aberto): ?>
+        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>Última Aposta Disponível</h6>
         <div class="aposta-card">
             <div class="aposta-label">Evento</div>
-            <div class="aposta-evento"><?= htmlspecialchars($ultima_aposta['evento_nome']) ?></div>
+            <div class="aposta-evento"><?= htmlspecialchars($ultimo_evento_aberto['nome']) ?></div>
             
             <div class="aposta-details">
                 <div class="aposta-detail-item">
-                    <div class="aposta-detail-label">Opção</div>
-                    <div class="aposta-detail-value"><?= htmlspecialchars($ultima_aposta['opcao_descricao']) ?></div>
+                    <div class="aposta-detail-label">Fecha em</div>
+                    <div class="aposta-detail-value"><?= date('d/m/Y H:i', strtotime($ultimo_evento_aberto['data_limite'])) ?></div>
                 </div>
-                <div class="aposta-detail-item">
-                    <div class="aposta-detail-label">Valor</div>
-                    <div class="aposta-detail-value">$ <?= number_format($ultima_aposta['valor'], 2, ',', '.') ?></div>
-                </div>
-                <div class="aposta-detail-item">
-                    <div class="aposta-detail-label">Odd</div>
-                    <div class="aposta-detail-value"><?= number_format($ultima_aposta['odd_registrada'], 2) ?></div>
-                </div>
-                <div class="aposta-detail-item">
-                    <div class="aposta-detail-label">Possível Ganho</div>
-                    <div class="aposta-detail-value">$ <?= number_format($ultima_aposta['valor'] * $ultima_aposta['odd_registrada'], 2, ',', '.') ?></div>
-                </div>
-                <div class="aposta-detail-item">
-                    <div class="aposta-detail-label">Status</div>
-                    <div>
-                        <?php if($ultima_aposta['evento_status'] == 'aberta'): ?>
-                            <span class="status-badge status-aberta"><i class="bi bi-hourglass-split me-1"></i>Aberta</span>
-                        <?php else: ?>
-                            <span class="status-badge status-finalizada"><i class="bi bi-check-circle me-1"></i>Finalizada</span>
-                        <?php endif; ?>
-                    </div>
-                </div>
+                <?php if(!empty($ultimo_evento_aberto['opcoes'])): ?>
+                    <?php foreach($ultimo_evento_aberto['opcoes'] as $opcao): ?>
+                        <div class="aposta-detail-item">
+                            <div class="aposta-detail-label"><?= htmlspecialchars($opcao['descricao']) ?></div>
+                            <div class="aposta-detail-value"><?= number_format($opcao['odd'], 2) ?>x</div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
 
-            <a href="games/apostas.php" class="btn-play-secondary">Ver todas as apostas</a>
+            <a href="games/index.php?game=apostas" class="btn-play-secondary">Ver todas as apostas</a>
         </div>
     <?php else: ?>
-        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>Última Aposta</h6>
+        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>Última Aposta Disponível</h6>
         <div class="empty-state">
             <div class="empty-icon"><i class="bi bi-inbox"></i></div>
-            <div class="empty-text">Você ainda não fez nenhuma aposta</div>
+            <div class="empty-text">Nenhum evento disponível no momento</div>
         </div>
     <?php endif; ?>
 

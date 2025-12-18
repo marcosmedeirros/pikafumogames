@@ -1,9 +1,9 @@
 ﻿<?php
-// flappy.php - O CLÃSSICO VICIANTE (PIKAFUMO EDITION ðŸ¦)
-// VERSÃƒO: SEM TRAVAS DE SEGURANÃ‡A (Modo Desenvolvimento)
+// flappy.php - O CLÁSSICO VICIANTE (PIKAFUMO EDITION 🐦)
+// VERSÃO: SEM TRAVAS DE SEGURANÇA (Modo Desenvolvimento)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-session_start();
+// session_start já foi chamado em games/index.php
 require '../core/conexao.php';
 
 // 1. SeguranÃ§a BÃ¡sica (Apenas Login)
@@ -84,10 +84,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         exit;
     }
 
-    // C. SALVAR PONTOS
+    // C. SALVAR PONTOS (suporta valores positivos e negativos)
     if ($_POST['acao'] == 'salvar_moedas') {
         $moedas = (int)$_POST['qtd'];
-        if ($moedas > 0) {
+        if ($moedas != 0) {
             $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :id")->execute([':val' => $moedas, ':id' => $user_id]);
         }
         echo json_encode(['sucesso' => true]);
@@ -109,7 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flappy - Pikafumo Games</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>ðŸ¦</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐦</text></svg>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <div class="hud-score" id="scoreDisplay" style="display: none;">0</div>
 
     <div id="start-screen" class="overlay-screen">
-        <h1 class="display-1 mb-0">ðŸ¦</h1>
+        <h1 class="display-1 mb-0">🐦</h1>
         <h3 class="text-white mb-2">FLAPPY BIRD</h3>
         <p class="text-white-50 mb-3">Recorde: <strong class="text-warning"><?= $recorde ?></strong></p>
         <button class="btn btn-warning w-100 fw-bold rounded-pill mb-3" onclick="toggleShop()"><i class="bi bi-cart-fill"></i> LOJA DE SKINS</button>
@@ -201,6 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             <div class="d-flex justify-content-between mb-2"><span class="text-white-50">Placar</span><strong class="text-white" id="finalScore">0</strong></div>
             <div class="d-flex justify-content-between"><span class="text-white-50">Melhor</span><strong class="text-warning" id="bestScore"><?= $recorde ?></strong></div>
         </div>
+        <button id="reviveBtn" class="btn btn-warning w-100 fw-bold rounded-pill mb-2" onclick="revive()" style="display: none;"><i class="bi bi-heart-fill"></i> CONTINUAR (10 pts)</button>
         <button class="btn btn-primary w-100 fw-bold rounded-pill mb-2" onclick="startGame()"><i class="bi bi-arrow-clockwise"></i> TENTAR DE NOVO</button>
         <button class="btn btn-outline-light w-100 rounded-pill" onclick="location.href='../index.php'">Menu Principal</button>
     </div>
@@ -230,8 +231,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         'robo':    { body: '#bdbdbd', wing: '#757575' }
     };
 
-    // VariÃ¡veis Jogo
+    // Variáveis Jogo
     let frames = 0, score = 0, highScore = <?= $recorde ?>, currentState = 'START', coinsEarned = 0;
+    let hasUsedRevive = false; // Controla se já usou o revive
     
     // Entidades
     const bird = {
@@ -349,7 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         const fd = new FormData(); 
         fd.append('acao', 'comprar_skin'); 
         fd.append('skin', skin);
-        fetch('flappy.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d=>{
+        fetch('index.php?game=flappy', { method: 'POST', body: fd }).then(r=>r.json()).then(d=>{
             if(d.sucesso) { alert('Comprado!'); location.reload(); }
             else alert(d.erro);
         });
@@ -359,7 +361,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         const fd = new FormData(); 
         fd.append('acao', 'equipar_skin'); 
         fd.append('skin', skin);
-        fetch('flappy.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d=>{
+        fetch('index.php?game=flappy', { method: 'POST', body: fd }).then(r=>r.json()).then(d=>{
             if(d.sucesso) { currentSkin = skin; alert('Equipado!'); location.reload(); }
             else alert(d.erro);
         });
@@ -382,6 +384,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         document.getElementById('game-over-screen').style.display = 'none';
         document.getElementById('scoreDisplay').style.display = 'block';
         bird.y = 150; bird.velocity = 0; pipes.reset(); score = 0; frames = 0; coinsEarned = 0;
+        hasUsedRevive = false; // Reset do revive ao iniciar novo jogo
         currentState = 'GAME'; loop();
     }
 
@@ -391,18 +394,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         document.getElementById('finalScore').innerText = score;
         document.getElementById('bestScore').innerText = highScore;
         document.getElementById('scoreDisplay').style.display = 'none';
+        
+        // Mostra botão de revive apenas na primeira morte e se tiver pontos suficientes
+        let currentPoints = parseInt(saldoDisplay.innerText.replace(/\D/g,''));
+        if(!hasUsedRevive && currentPoints >= 10) {
+            document.getElementById('reviveBtn').style.display = 'block';
+        } else {
+            document.getElementById('reviveBtn').style.display = 'none';
+        }
+        
         setTimeout(() => document.getElementById('game-over-screen').style.display = 'block', 500);
         
         const fd = new FormData(); 
         fd.append('acao', 'salvar_score'); 
         fd.append('score', score);
-        fetch('flappy.php', { method: 'POST', body: fd });
+        fetch('index.php?game=flappy', { method: 'POST', body: fd });
         
         if(coinsEarned > 0) {
             const fdc = new FormData(); 
             fdc.append('acao', 'salvar_moedas'); 
             fdc.append('qtd', coinsEarned);
-            fetch('flappy.php', { method: 'POST', body: fdc }).then(r=>r.json()).then(d=>{
+            fetch('index.php?game=flappy', { method: 'POST', body: fdc }).then(r=>r.json()).then(d=>{
                 if(d.sucesso) {
                     let cur = parseInt(saldoDisplay.innerText.replace(/\D/g,''));
                     saldoDisplay.innerText = (cur + coinsEarned).toLocaleString('pt-BR') + ' pts';
@@ -415,6 +427,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         let e=document.createElement('div'); e.className='floating-text'; e.innerText=t;
         let r=canvas.getBoundingClientRect(); e.style.left=(r.left+x)+'px'; e.style.top=(r.top+y)+'px';
         document.body.appendChild(e); setTimeout(()=>e.remove(),1000);
+    }
+
+    function revive() {
+        // Cobra 10 pontos e retoma o jogo
+        const fd = new FormData();
+        fd.append('acao', 'salvar_moedas');
+        fd.append('qtd', -10); // Desconta 10 pontos
+        fetch('index.php?game=flappy', { method: 'POST', body: fd }).then(r=>r.json()).then(d=>{
+            if(d.sucesso) {
+                let cur = parseInt(saldoDisplay.innerText.replace(/\D/g,''));
+                saldoDisplay.innerText = (cur - 10).toLocaleString('pt-BR') + ' pts';
+                
+                hasUsedRevive = true; // Marca que já usou o revive
+                document.getElementById('game-over-screen').style.display = 'none';
+                document.getElementById('scoreDisplay').style.display = 'block';
+                
+                // Reposiciona o pássaro e limpa canos próximos
+                bird.y = 150;
+                bird.velocity = 0;
+                pipes.items = pipes.items.filter(p => p.x > 200); // Remove canos muito próximos
+                
+                showFloatingText('REVIVEU! 💚', canvas.width/2 - 50, 200);
+                currentState = 'GAME';
+                loop();
+            } else {
+                alert('Erro ao processar revive');
+            }
+        });
     }
 
     bg.draw(); fg.draw(); bird.draw();

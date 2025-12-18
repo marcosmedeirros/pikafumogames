@@ -279,7 +279,7 @@ foreach ($eventos as $key => $evt) {
     <div class="d-flex align-items-center gap-3">
         <span class="fs-5 text-white">Olá Admin, <strong><?= htmlspecialchars($user['nome']) ?></strong></span>
         <!-- MENU ADMIN -->
-        <a href="admin_cafe.php" class="btn btn-outline-warning btn-sm fw-bold"><i class="bi bi-bank me-1"></i>Banco do Café</a>
+        <a href="cafe.php" class="btn btn-outline-warning btn-sm fw-bold"><i class="bi bi-bank me-1"></i>Banco do Café</a>
     </div>
     
     <div class="d-flex align-items-center gap-3">

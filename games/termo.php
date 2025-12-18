@@ -4,8 +4,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// termo.php - O JOGO DIÃRIO DA FIRMA (DARK MODE ðŸ§©ðŸŒ‘)
-session_start();
+// termo.php - O JOGO DIÁRIO DA FIRMA (DARK MODE 🧩🌙)
+// session_start já foi chamado em games/index.php
 require '../core/conexao.php';
 
 // --- CONFIGURAÃ‡Ã•ES ---
@@ -27,19 +27,16 @@ try {
 
 // --- FUNÃ‡ÃƒO AUXILIAR ---
 function removerAcentos($string) {
-    if (function_exists('mb_strtolower')) {
-        return strtoupper(str_replace(
-            ['Ã¡','Ã ','Ã¢','Ã£','Ã¤','Ã©','Ã¨','Ãª','Ã«','Ã­','Ã¬','Ã®','Ã¯','Ã³','Ã²','Ã´','Ãµ','Ã¶','Ãº','Ã¹','Ã»','Ã¼','Ã§','Ã±'],
-            ['A','A','A','A','A','E','E','E','E','I','I','I','I','O','O','O','O','O','U','U','U','U','C','N'],
-            mb_strtolower($string, 'UTF-8')
-        ));
-    } else {
-        return strtoupper(str_replace(
-            ['Ã¡','Ã ','Ã¢','Ã£','Ã¤','Ã©','Ã¨','Ãª','Ã«','Ã­','Ã¬','Ã®','Ã¯','Ã³','Ã²','Ã´','Ãµ','Ã¶','Ãº','Ã¹','Ã»','Ã¼','Ã§','Ã±'],
-            ['A','A','A','A','A','E','E','E','E','I','I','I','I','O','O','O','O','O','U','U','U','U','C','N'],
-            strtolower($string)
-        ));
-    }
+    $s = mb_strtoupper($string, 'UTF-8');
+    $map = [
+        'Á'=>'A','À'=>'A','Â'=>'A','Ã'=>'A','Ä'=>'A',
+        'É'=>'E','È'=>'E','Ê'=>'E','Ë'=>'E',
+        'Í'=>'I','Ì'=>'I','Î'=>'I','Ï'=>'I',
+        'Ó'=>'O','Ò'=>'O','Ô'=>'O','Õ'=>'O','Ö'=>'O',
+        'Ú'=>'U','Ù'=>'U','Û'=>'U','Ü'=>'U',
+        'Ç'=>'C'
+    ];
+    return strtr($s, $map);
 }
 
 // --- LÃ“GICA DO DIA ---
@@ -188,7 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
     <title>Termo - Pikafumo Games</title>
     
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>ðŸ§©</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧩</text></svg>">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -271,12 +268,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
     <?php if($jogo_finalizado): ?>
         <div class="alert <?= $venceu_hoje ? 'alert-success' : 'alert-secondary' ?> mt-5 shadow-sm border-0">
             <?php if($venceu_hoje): ?>
-                <h2 class="display-4">ðŸŽ‰</h2>
-                <h4>ParabÃ©ns! Pontos garantidos.</h4>
-                <p>VocÃª acertou em <strong><?= count($chutes_realizados) ?></strong> tentativas.</p>
+                <h2 class="display-4">🎉</h2>
+                <h4>Parabéns! Pontos garantidos.</h4>
+                <p>Você acertou em <strong><?= count($chutes_realizados) ?></strong> tentativas.</p>
             <?php else: ?>
-                <h2>ðŸ˜¢</h2>
-                <h4>NÃ£o foi dessa vez!</h4>
+                <h2>😢</h2>
+                <h4>Não foi dessa vez!</h4>
                 <p>A palavra era: <strong><?= $PALAVRA_DO_DIA ?></strong></p>
             <?php endif; ?>
             
@@ -332,12 +329,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
             </div>
             <div class="key-row">
                 <button class="key">A</button><button class="key">S</button><button class="key">D</button><button class="key">F</button><button class="key">G</button><button class="key">H</button><button class="key">J</button><button class="key">K</button><button class="key">L</button>
-                <button class="key">Ã‡</button>
+                <button class="key">Ç</button>
             </div>
             <div class="key-row">
                 <button class="key key-enter" id="enter-btn">ENTER</button>
                 <button class="key">Z</button><button class="key">X</button><button class="key">C</button><button class="key">V</button><button class="key">B</button><button class="key">N</button><button class="key">M</button>
-                <button class="key key-back" id="back-btn">âŒ«</button>
+                <button class="key key-back" id="back-btn">⌫</button>
             </div>
         </div>
 
@@ -357,7 +354,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
 
     function restoreState() {
         historicoChutes.forEach((palavra, index) => {
-            fetch('termo.php', {
+            fetch('index.php?game=termo', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `chute=${palavra}&tentativa=${index + 1}&validar_somente=1`
@@ -422,7 +419,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
             showMessage("A palavra precisa de 5 letras!");
             return;
         }
-        fetch('termo.php', {
+        fetch('index.php?game=termo', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: `chute=${guess}&tentativa=${currentRow + 1}`
@@ -434,7 +431,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
             updateKeyboard(guess, data.cores);
             if(data.fim_jogo) {
                 gameOver = true;
-                let msg = data.ganhou ? `PARABÃ‰NS! +${data.pontos} PONTOS! ðŸš€` : `Fim de jogo! A palavra era: ${data.palavra_correta}`;
+                let msg = data.ganhou ? `PARABÉNS! +${data.pontos} PONTOS! 🚀` : `Fim de jogo! A palavra era: ${data.palavra_correta}`;
                 let type = data.ganhou ? 'success' : 'danger';
                 showMessage(msg, type);
                 setTimeout(() => location.reload(), 4000);

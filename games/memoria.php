@@ -4,8 +4,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// memoria.php - O JOGO DA MEMÃ“RIA RAM (COM PERSISTÃŠNCIA E DARK MODE ðŸ’¾ðŸŒ‘) ðŸ§ 
-session_start();
+// memoria.php - O JOGO DA MEMÓRIA RAM (COM PERSISTÊNCIA E DARK MODE 💾🌙) 🧠
+// session_start já foi chamado em games/index.php
 require '../core/conexao.php';
 
 // --- CONFIGURAÃ‡Ã•ES ---
@@ -25,9 +25,9 @@ try {
     die("Erro perfil: " . $e->getMessage());
 }
 
-// --- FUNÃ‡Ã•ES DO JOGO ---
+// --- FUNÇÕES DO JOGO ---
 function gerarTabuleiroNovo() {
-    $emojis = ['ðŸš€', 'ðŸ›', 'â˜•', 'ðŸ’»', 'ðŸ“…', 'ðŸ“Š', 'ðŸ”¥', 'ðŸ’¡'];
+    $emojis = ['🚀', '🛸', '☕', '💻', '📅', '📊', '🔥', '💡'];
     $cards = array_merge($emojis, $emojis);
     shuffle($cards);
     $tabuleiro = [];
@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <title>MemÃ³ria RAM - Pikafumo Games</title>
     
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>ðŸ§ </text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -231,9 +231,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <?php elseif($status_atual == 'perdeu'): ?>
         <div class="alert alert-danger mt-5 p-5 shadow-lg border-0 bg-danger bg-opacity-25 text-white">
             <h1 class="display-1">ðŸ’¥ðŸ’»</h1>
-            <h3 class="mt-3">System Overload!</h3>
-            <p class="lead">VocÃª estourou o limite de <strong><?= $LIMITE_MOVIMENTOS ?></strong> movimentos.</p>
-            <p>Tente novamente amanhÃ£.</p>
+            <h3 class="mt-3">Você perdeu!</h3>
+            <p class="lead">Você atingiu o limite de <strong><?= $LIMITE_MOVIMENTOS ?></strong> movimentos sem completar o desafio.</p>
+            <p class="fs-5 fw-bold">Tente novamente amanhã! 🧠</p>
             <a href="../index.php" class="btn btn-outline-light btn-lg mt-3 fw-bold">Voltar ao Painel</a>
         </div>
     <?php else: ?>
@@ -327,6 +327,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     function incrementMoves() {
         moves++; movesDisplay.textContent = moves;
         if(moves >= LIMITE - 4) { movesDisplay.classList.remove('text-white'); movesDisplay.classList.add('limit-warning'); }
+        if(moves >= LIMITE) {
+            // trava imediatamente e força salvamento/derrota
+            lockBoard = true;
+            cards.forEach(c => c.removeEventListener('click', flipCard));
+            if(timerInterval) clearInterval(timerInterval);
+            saveGameState();
+        }
     }
 
     function saveGameState() {
@@ -338,11 +345,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         formData.append('tempo', seconds);
         formData.append('pares_encontrados', JSON.stringify(encontrados));
 
-        fetch('memoria.php', { method: 'POST', body: formData })
+        fetch('index.php?game=memoria', { method: 'POST', body: formData })
         .then(response => response.json())
         .then(data => {
             if(data.status === 'venceu') setTimeout(() => location.reload(), 500);
-            else if (data.status === 'perdeu') setTimeout(() => { alert('Limite atingido!'); location.reload(); }, 500);
+            else if (data.status === 'perdeu') setTimeout(() => location.reload(), 500);
         });
     }
 </script>

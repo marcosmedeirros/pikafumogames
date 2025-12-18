@@ -1,8 +1,8 @@
 ﻿<?php
-// xadrez.php - XADREZ COM LOBBY AUTOMÃTICO (REALTIME âš¡) E RANKING
+// xadrez.php - XADREZ COM LOBBY AUTOMÁTICO (REALTIME ⚡) E RANKING
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-session_start();
+// session_start já foi chamado em games/index.php
 require '../core/conexao.php';
 
 // 1. SeguranÃ§a e Dados do UsuÃ¡rio
@@ -295,7 +295,7 @@ $stmtGames = $pdo->prepare("
 $stmtGames->execute([':id' => $user_id]);
 $minhas_partidas = $stmtGames->fetchAll(PDO::FETCH_ASSOC);
 
-// 3. BUSCA RANKING DE VITÃ“RIAS NO XADREZ (NOVO ðŸ†)
+// 3. BUSCA RANKING DE VITÓRIAS NO XADREZ (NOVO 🏆)
 try {
     $stmtRankChess = $pdo->query("
         SELECT u.nome, COUNT(p.id) as vitorias 
@@ -329,7 +329,7 @@ if (isset($_GET['id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xadrez - Pikafumo Games</title>
     
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>â™Ÿï¸</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>♟️</text></svg>">
 
     <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -446,7 +446,7 @@ if (isset($_GET['id'])) {
                 <div class="d-flex justify-content-between align-items-center mt-3 gap-2">
                     <div id="statusGame" class="alert alert-dark border-secondary py-2 fw-bold m-0 flex-grow-1 shadow-sm">Carregando...</div>
                     <?php if($jogo_ativo['status'] == 'andamento'): ?>
-                        <button onclick="desistir()" class="btn btn-outline-danger fw-bold shadow-sm">ðŸ³ï¸ Desistir</button>
+                        <button onclick="desistir()" class="btn btn-outline-danger fw-bold shadow-sm">🏳️ Desistir</button>
                     <?php endif; ?>
                 </div>
             </div>
@@ -497,7 +497,7 @@ if (isset($_GET['id'])) {
                     </div>
                 </div>
 
-                <!-- Card Ranking de Xadrez (NOVO ðŸ†) -->
+                <!-- Card Ranking de Xadrez (NOVO 🏆) -->
                 <div class="card card-dark shadow-lg">
                     <div class="card-header card-header-dark fw-bold text-info"><i class="bi bi-trophy-fill me-2"></i>Mestres do Xadrez</div>
                     <div class="card-body p-0">
@@ -508,9 +508,9 @@ if (isset($_GET['id'])) {
                                         <div class="d-flex align-items-center">
                                             <span class="me-2 fw-bold" style="width: 25px;">
                                                 <?php 
-                                                    if($i==0) echo 'ðŸ¥‡';
-                                                    elseif($i==1) echo 'ðŸ¥ˆ';
-                                                    elseif($i==2) echo 'ðŸ¥‰';
+                                                    if($i==0) echo '🥇';
+                                                    elseif($i==1) echo '🥈';
+                                                    elseif($i==2) echo '🥉';
                                                     else echo '<span class="text-secondary small">#'.($i+1).'</span>';
                                                 ?>
                                             </span>
@@ -597,14 +597,14 @@ if (isset($_GET['id'])) {
     // --- LÃ“GICA DO LOBBY ---
     $('#formDesafio').submit(function(e) {
         e.preventDefault();
-        $.post('xadrez.php', $(this).serialize(), function(data) {
+        $.post('index.php?game=xadrez', $(this).serialize(), function(data) {
             if(data.erro) alert(data.erro); else { alert('Desafio enviado!'); location.reload(); }
         }, 'json');
     });
 
     function aceitarDesafio(id) {
         if(!confirm('Apostar pontos e iniciar partida?')) return;
-        $.post('xadrez.php', {acao: 'aceitar', id_partida: id}, function(data) {
+        $.post('index.php?game=xadrez', {acao: 'aceitar', id_partida: id}, function(data) {
             if(data.erro) alert(data.erro); else location.reload();
         }, 'json');
     }
@@ -612,7 +612,7 @@ if (isset($_GET['id'])) {
     <?php if (!$jogo_ativo): ?>
     // --- AUTO UPDATE DO LOBBY (Polling a cada 3s) ---
     setInterval(function() {
-        $.post('xadrez.php', {acao: 'atualizar_lobby'}, function(html) {
+        $.post('index.php?game=xadrez', {acao: 'atualizar_lobby'}, function(html) {
             $('#listaPartidas').html(html);
         });
     }, 3000);
@@ -651,12 +651,12 @@ if (isset($_GET['id'])) {
 
         updateUI();
         
-        $.post('xadrez.php', {
+        $.post('index.php?game=xadrez', {
             acao: 'mover', id_partida: gameId, fen: game.fen(), pgn: game.pgn(),
             game_over: game.game_over(), draw: game.in_draw()
         }, function(data) {
             if(data.erro) { alert(data.erro); game.undo(); board.position(game.fen()); }
-            else if(game.game_over()) { alert('Xeque-mate! Fim de jogo.'); window.location.href = 'xadrez.php'; }
+            else if(game.game_over()) { alert('Xeque-mate! Fim de jogo.'); window.location.href = 'index.php?game=xadrez'; }
         }, 'json');
     }
 
@@ -721,9 +721,9 @@ if (isset($_GET['id'])) {
 
     function desistir() {
         if(!confirm('Tem certeza que deseja desistir? VocÃª perderÃ¡ os pontos apostados.')) return;
-        $.post('xadrez.php', {acao: 'desistir', id_partida: gameId}, function(data) {
+        $.post('index.php?game=xadrez', {acao: 'desistir', id_partida: gameId}, function(data) {
             if(data.erro) alert(data.erro);
-            else { alert('VocÃª desistiu da partida.'); window.location.href = 'xadrez.php'; }
+            else { alert('Você desistiu da partida.'); window.location.href = 'index.php?game=xadrez'; }
         }, 'json');
     }
 
@@ -754,8 +754,8 @@ if (isset($_GET['id'])) {
 
             if(timeWhite <= 0 || timeBlack <= 0) {
                 clearInterval(timerInterval); gameActive = false;
-                $.post('xadrez.php', {acao: 'reivindicar_tempo', id_partida: gameId}, function(data){
-                    if(data.sucesso) { alert(data.msg); window.location.href = 'xadrez.php'; }
+                $.post('index.php?game=xadrez', {acao: 'reivindicar_tempo', id_partida: gameId}, function(data){
+                    if(data.sucesso) { alert(data.msg); window.location.href = 'index.php?game=xadrez'; }
                 }, 'json');
             }
         }, 1000);
@@ -764,7 +764,7 @@ if (isset($_GET['id'])) {
 
     setInterval(function() {
         if(!gameActive) return;
-        $.post('xadrez.php', {acao: 'buscar_estado', id_partida: gameId}, function(data) {
+        $.post('index.php?game=xadrez', {acao: 'buscar_estado', id_partida: gameId}, function(data) {
             timeWhite = parseInt(data.tempo_brancas);
             timeBlack = parseInt(data.tempo_pretas);
             if (data.fen && data.fen !== game.fen()) {
@@ -774,7 +774,7 @@ if (isset($_GET['id'])) {
                 updateUI();
             }
             if (data.status === 'finalizada' || data.status === 'empate') {
-                gameActive = false; alert('Partida finalizada!'); window.location.href = 'xadrez.php';
+                gameActive = false; alert('Partida finalizada!'); window.location.href = 'index.php?game=xadrez';
             }
         }, 'json');
     }, 2000);

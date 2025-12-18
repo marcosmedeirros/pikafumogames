@@ -98,7 +98,7 @@ $lista = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top mb-4">
     <div class="d-flex align-items-center gap-3">
         <span class="fs-5 text-white">Admin: <strong><?= htmlspecialchars($user['nome']) ?></strong></span>
-        <a href="cafe.php" class="btn btn-outline-light btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar</a>
+        <a href="dashboard.php" class="btn btn-outline-light btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar</a>
     </div>
 </div>
 
