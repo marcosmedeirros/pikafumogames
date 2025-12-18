@@ -118,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MemÃ³ria RAM - Pikafumo Games</title>
+    <title>Memória RAM - Pikafumo Games</title>
     
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧠</text></svg>">
@@ -222,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
     <?php if($status_atual == 'venceu'): ?>
         <div class="alert alert-success mt-5 p-5 shadow-lg border-0 bg-success bg-opacity-25 text-white">
-            <h1 class="display-1">ðŸ§ ðŸ†</h1>
+            <h1 class="display-1">🧠🏆</h1>
             <h3 class="mt-3">Missão Cumprida!</h3>
             <p class="lead">Você completou o desafio em <strong><?= $dados_jogo['movimentos'] ?></strong> movimentos.</p>
             <p>Pontos creditados: <strong>+<?= $PONTOS_VITORIA ?></strong></p>
@@ -230,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         </div>
     <?php elseif($status_atual == 'perdeu'): ?>
         <div class="alert alert-danger mt-5 p-5 shadow-lg border-0 bg-danger bg-opacity-25 text-white">
-            <h1 class="display-1">ðŸ’¥ðŸ’»</h1>
+            <h1 class="display-1">💥🧠</h1>
             <h3 class="mt-3">Você perdeu!</h3>
             <p class="lead">Você atingiu o limite de <strong><?= $LIMITE_MOVIMENTOS ?></strong> movimentos sem completar o desafio.</p>
             <p class="fs-5 fw-bold">Tente novamente amanhã! 🧠</p>

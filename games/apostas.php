@@ -483,7 +483,10 @@ $msg = isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : "";
                             $status_texto = "<i class='bi bi-hourglass-split me-1'></i>Aberta";
                             $linha_style = "";
 
-                            if ($aposta['evento_status'] == 'finalizada') {
+                            $status_normalizado = strtolower(trim($aposta['evento_status'] ?? ''));
+                            
+                            // Verifica se o evento está encerrado/finalizado
+                            if (in_array($status_normalizado, ['encerrada', 'finalizada', 'fechada', 'encerrado', 'finalizado', 'fechado'])) {
                                 if ($aposta['vencedor_opcao_id'] === null) {
                                     $status_badge = "status-cancelada";
                                     $status_texto = "Cancelado";
@@ -496,6 +499,9 @@ $msg = isset($_GET['msg']) ? htmlspecialchars($_GET['msg']) : "";
                                     $status_texto = "<i class='bi bi-x-circle-fill me-1'></i>Perdeu";
                                     $linha_style = "background-color: rgba(220, 53, 69, 0.1) !important;";
                                 }
+                            } elseif (in_array($status_normalizado, ['cancelada', 'cancelado', 'canceled', 'cancelled'])) {
+                                $status_badge = "status-cancelada";
+                                $status_texto = "Cancelado";
                             }
                         ?>
                         <tr style="<?= $linha_style ?>">

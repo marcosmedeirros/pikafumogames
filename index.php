@@ -347,7 +347,7 @@ try {
         .ranking-position {
             font-weight: 800;
             color: var(--accent-green);
-            min-width: 30px;
+            display: inline-block;
         }
 
         .ranking-name {
@@ -364,12 +364,12 @@ try {
             text-align: right;
         }
 
-        /* Medal Icons */
+        /* Medal Icons (sem repetir número) */
         .medal-1::before { content: '🥇'; margin-right: 5px; }
         .medal-2::before { content: '🥈'; margin-right: 5px; }
         .medal-3::before { content: '🥉'; margin-right: 5px; }
-        .medal-4::before { content: '4️⃣'; margin-right: 5px; }
-        .medal-5::before { content: '5️⃣'; margin-right: 5px; }
+        .medal-4::before { content: '🏅'; margin-right: 5px; }
+        .medal-5::before { content: '🏅'; margin-right: 5px; }
 
         /* ===== ÚLTIMA APOSTA ===== */
         .aposta-card {
@@ -716,7 +716,7 @@ try {
             <?php else: ?>
                 <?php foreach($top_5_ranking as $idx => $jogador): ?>
                     <div class="ranking-item medal-<?= $idx+1 ?>">
-                        <span class="ranking-position"><?= $idx+1 ?></span>
+                        <span class="ranking-position" aria-label="Posição <?= $idx+1 ?>"></span>
                         <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
                         <span class="ranking-value">
                             <?= number_format($jogador['lucro_liquido'], 0, ',', '.') ?> pts
@@ -736,7 +736,7 @@ try {
             <?php else: ?>
                 <?php foreach($top_5_cafes as $idx => $jogador): ?>
                     <div class="ranking-item medal-<?= $idx+1 ?>">
-                        <span class="ranking-position"><?= $idx+1 ?></span>
+                        <span class="ranking-position" aria-label="Posição <?= $idx+1 ?>"></span>
                         <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
                         <span class="ranking-value">
                             <i class="bi bi-cup-hot"></i> <?= $jogador['cafes_feitos'] ?>
