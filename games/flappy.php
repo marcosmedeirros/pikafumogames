@@ -6,11 +6,11 @@ error_reporting(E_ALL);
 // session_start já foi chamado em games/index.php
 require '../core/conexao.php';
 
-// 1. SeguranÃ§a BÃ¡sica (Apenas Login)
+// 1. Segurança Básica (Apenas Login)
 if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
 $user_id = $_SESSION['user_id'];
 
-// 2. ConfiguraÃ§Ã£o de Banco de Dados e Skins
+// 2. Configuração de Banco de Dados e Skins
 try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS flappy_historico (id INT AUTO_INCREMENT PRIMARY KEY, id_usuario INT NOT NULL, pontuacao INT NOT NULL, data_jogo DATETIME DEFAULT CURRENT_TIMESTAMP)");
     $pdo->exec("CREATE TABLE IF NOT EXISTS flappy_compras_skins (id INT AUTO_INCREMENT PRIMARY KEY, id_usuario INT NOT NULL, skin VARCHAR(50) NOT NULL, data_compra DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(id_usuario, skin))");
@@ -32,13 +32,13 @@ try {
     $ranking_flappy = $stmtRank->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) { die("Erro DB: " . $e->getMessage()); }
 
-// CONFIGURAÃ‡ÃƒO DAS SKINS
+// CONFIGURAÇÃO DAS SKINS
 $catalogo_skins = [
-    'azul' => ['nome' => 'AzulÃ£o', 'cor' => '#29b6f6', 'preco' => 10, 'desc' => 'ClÃ¡ssico Azul'],
-    'vermelho' => ['nome' => 'Red Bird', 'cor' => '#ef5350', 'preco' => 20, 'desc' => 'RÃ¡pido e Furioso'],
+    'azul' => ['nome' => 'Azulão', 'cor' => '#29b6f6', 'preco' => 10, 'desc' => 'Clássico Azul'],
+    'vermelho' => ['nome' => 'Red Bird', 'cor' => '#ef5350', 'preco' => 20, 'desc' => 'Rápido e Furioso'],
     'verde' => ['nome' => 'Verdinho', 'cor' => '#66bb6a', 'preco' => 20, 'desc' => 'Camuflado'],
     'fantasma' => ['nome' => 'Fantasma', 'cor' => '#ab47bc', 'preco' => 25, 'desc' => 'Assustador'],
-    'robo' => ['nome' => 'RobÃ´-X', 'cor' => '#bdbdbd', 'preco' => 30, 'desc' => 'Blindado']
+    'robo' => ['nome' => 'Robô-X', 'cor' => '#bdbdbd', 'preco' => 30, 'desc' => 'Blindado']
 ];
 
 // --- API AJAX (Sem Token CSRF) ---
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     // A. COMPRAR SKIN
     if ($_POST['acao'] == 'comprar_skin') {
         $skin = $_POST['skin'];
-        if (!isset($catalogo_skins[$skin])) die(json_encode(['erro' => 'Skin invÃ¡lida']));
+        if (!isset($catalogo_skins[$skin])) die(json_encode(['erro' => 'Skin inválida']));
         $preco = $catalogo_skins[$skin]['preco'];
 
         try {
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
             $stmtCheck = $pdo->prepare("SELECT id FROM flappy_compras_skins WHERE id_usuario = :uid AND skin = :skin");
             $stmtCheck->execute([':uid' => $user_id, ':skin' => $skin]);
-            if ($stmtCheck->rowCount() > 0) throw new Exception("VocÃª jÃ¡ tem essa skin!");
+            if ($stmtCheck->rowCount() > 0) throw new Exception("Você já tem essa skin!");
 
             $pdo->prepare("UPDATE usuarios SET pontos = pontos - :val WHERE id = :uid")->execute([':val' => $preco, ':uid' => $user_id]);
             $pdo->prepare("INSERT INTO flappy_compras_skins (id_usuario, skin) VALUES (:uid, :skin)")->execute([':uid' => $user_id, ':skin' => $skin]);
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             if ($skin !== 'default') {
                 $stmtCheck = $pdo->prepare("SELECT id FROM flappy_compras_skins WHERE id_usuario = :uid AND skin = :skin");
                 $stmtCheck->execute([':uid' => $user_id, ':skin' => $skin]);
-                if ($stmtCheck->rowCount() == 0) throw new Exception("Skin nÃ£o encontrada.");
+                if ($stmtCheck->rowCount() == 0) throw new Exception("Skin não encontrada.");
             }
             $pdo->prepare("UPDATE usuarios SET flappy_skin_equipada = :skin WHERE id = :uid")->execute([':skin' => $skin, ':uid' => $user_id]);
             echo json_encode(['sucesso' => true]);
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
 <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top">
     <div class="d-flex align-items-center gap-3">
-        <span class="fs-5">OlÃ¡, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+        <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
     </div>
     <div class="d-flex align-items-center gap-3">
         <a href="../index.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar</a>
@@ -167,10 +167,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     </div>
 
     <div id="shop-screen" class="overlay-screen" style="display: none;">
-        <h3 class="text-warning mb-3"><i class="bi bi-shop"></i> Loja de PÃ¡ssaros</h3>
+        <h3 class="text-warning mb-3"><i class="bi bi-shop"></i> Loja de Pássaros</h3>
         <div class="shop-grid mb-3">
             <div class="skin-item">
-                <div><span class="skin-preview" style="background: #ffeb3b;"></span><strong class="text-white">PadrÃ£o</strong></div>
+                <div><span class="skin-preview" style="background: #ffeb3b;"></span><strong class="text-white">Padrão</strong></div>
                 <?php if($meu_perfil['flappy_skin_equipada'] == 'default'): ?>
                     <button class="btn btn-sm btn-secondary" disabled>Equipado</button>
                 <?php else: ?>
@@ -268,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     // Background Atualizado (15 pts)
     const bg = { 
         draw: function() { 
-            // Calcula qual cenÃ¡rio usar (agora a cada 15 pontos)
+            // Calcula qual cenário usar (agora a cada 15 pontos)
             let idx = Math.floor(score / 15) % scenarios.length;
             ctx.fillStyle = scenarios[idx].bg; 
             ctx.fillRect(0, 0, canvas.width, canvas.height); 

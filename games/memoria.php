@@ -1,5 +1,5 @@
 ﻿<?php
-// LIGA O MOSTRADOR DE ERROS (Remova em produÃ§Ã£o)
+// LIGA O MOSTRADOR DE ERROS (Remova em produção)
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -8,15 +8,15 @@ error_reporting(E_ALL);
 // session_start já foi chamado em games/index.php
 require '../core/conexao.php';
 
-// --- CONFIGURAÃ‡Ã•ES ---
+// --- CONFIGURAÇÕES ---
 $PONTOS_VITORIA = 10;
 $LIMITE_MOVIMENTOS = 16; 
 
-// 1. SeguranÃ§a
+// 1. Segurança
 if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
 $user_id = $_SESSION['user_id'];
 
-// --- 2. DADOS DO USUÃRIO (PARA O HEADER) ---
+// --- 2. DADOS DO USUÁRIO (PARA O HEADER) ---
 try {
     $stmtMe = $pdo->prepare("SELECT nome, pontos, is_admin FROM usuarios WHERE id = :id");
     $stmtMe->execute([':id' => $user_id]);
@@ -54,12 +54,12 @@ try {
         $dados_jogo = $stmt->fetch(PDO::FETCH_ASSOC);
     }
 } catch (PDOException $e) {
-    die("<div class='alert alert-danger'>Erro CrÃ­tico: Tabela memoria_historico faltando.</div>");
+    die("<div class='alert alert-danger'>Erro Crítico: Tabela memoria_historico faltando.</div>");
 }
 
 $tabuleiro_atual = (!empty($dados_jogo['estado_jogo'])) ? json_decode($dados_jogo['estado_jogo'], true) : null;
 
-// FIX CORRUPÃ‡ÃƒO
+// FIX CORRUPÇÃO
 if (!is_array($tabuleiro_atual)) {
     $tabuleiro_atual = gerarTabuleiroNovo();
     if (isset($dados_jogo['id'])) {
@@ -70,11 +70,11 @@ if (!is_array($tabuleiro_atual)) {
 $movimentos_atuais = $dados_jogo['movimentos'] ?? 0;
 $status_atual = $dados_jogo['status'] ?? 'jogando'; 
 
-// --- API DE ATUALIZAÃ‡ÃƒO (AJAX) ---
+// --- API DE ATUALIZAÇÃO (AJAX) ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     header('Content-Type: application/json');
 
-    if ($status_atual !== 'jogando') { echo json_encode(['erro' => 'Jogo jÃ¡ finalizado.']); exit; }
+    if ($status_atual !== 'jogando') { echo json_encode(['erro' => 'Jogo já finalizado.']); exit; }
 
     if ($_POST['acao'] == 'atualizar_estado') {
         $novos_movimentos = (int)$_POST['movimentos'];
@@ -127,7 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <style>
-        /* PADRÃƒO DARK MODE */
+        /* PADRÃO DARK MODE */
         body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
         
         /* Navbar Padronizada */
@@ -204,7 +204,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 <!-- Header Padronizado -->
 <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top">
     <div class="d-flex align-items-center gap-3">
-        <span class="fs-5">OlÃ¡, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+        <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
         <?php if (!empty($meu_perfil['is_admin']) && $meu_perfil['is_admin'] == 1): ?>
             <a href="../admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
         <?php endif; ?>
@@ -218,13 +218,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
 <div class="container game-container text-center mt-3">
     
-    <h3 class="mb-4 text-info fw-bold"><i class="bi bi-cpu-fill me-2"></i>MEMÃ“RIA RAM</h3>
+    <h3 class="mb-4 text-info fw-bold"><i class="bi bi-cpu-fill me-2"></i>MEMÓRIA RAM</h3>
 
     <?php if($status_atual == 'venceu'): ?>
         <div class="alert alert-success mt-5 p-5 shadow-lg border-0 bg-success bg-opacity-25 text-white">
             <h1 class="display-1">ðŸ§ ðŸ†</h1>
-            <h3 class="mt-3">MissÃ£o Cumprida!</h3>
-            <p class="lead">VocÃª completou o desafio em <strong><?= $dados_jogo['movimentos'] ?></strong> movimentos.</p>
+            <h3 class="mt-3">Missão Cumprida!</h3>
+            <p class="lead">Você completou o desafio em <strong><?= $dados_jogo['movimentos'] ?></strong> movimentos.</p>
             <p>Pontos creditados: <strong>+<?= $PONTOS_VITORIA ?></strong></p>
             <a href="../index.php" class="btn btn-outline-light btn-lg mt-3 fw-bold">Voltar ao Painel</a>
         </div>

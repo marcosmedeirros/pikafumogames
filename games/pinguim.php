@@ -6,7 +6,7 @@ error_reporting(E_ALL);
 // session_start já foi chamado em games/index.php
 require '../core/conexao.php';
 
-// 1. SeguranÃ§a BÃ¡sica
+// 1. Segurança Básica
 if (!isset($_SESSION['user_id'])) { header("Location: auth/login.php"); exit; }
 $user_id = $_SESSION['user_id'];
 
@@ -30,7 +30,7 @@ try {
     die("Erro DB Skins: " . $e->getMessage());
 }
 
-// 2. Dados do UsuÃ¡rio e Skins
+// 2. Dados do Usuário e Skins
 try {
     $stmtMe = $pdo->prepare("SELECT nome, pontos, is_admin, skin_equipada FROM usuarios WHERE id = :id");
     $stmtMe->execute([':id' => $user_id]);
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     // A. COMPRAR SKIN
     if ($_POST['acao'] == 'comprar_skin') {
         $skin = $_POST['skin'];
-        if (!isset($catalogo_skins[$skin])) die(json_encode(['erro' => 'Skin invÃ¡lida']));
+        if (!isset($catalogo_skins[$skin])) die(json_encode(['erro' => 'Skin inválida']));
         $preco = $catalogo_skins[$skin]['preco'];
         
         try {
@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
             $stmtCheck = $pdo->prepare("SELECT id FROM compras_skins WHERE id_usuario = :uid AND skin = :skin");
             $stmtCheck->execute([':uid' => $user_id, ':skin' => $skin]);
-            if ($stmtCheck->rowCount() > 0) throw new Exception("VocÃª jÃ¡ possui esta skin!");
+            if ($stmtCheck->rowCount() > 0) throw new Exception("Você já possui esta skin!");
 
             $pdo->prepare("UPDATE usuarios SET pontos = pontos - :val WHERE id = :id")->execute([':val' => $preco, ':id' => $user_id]);
             $pdo->prepare("INSERT INTO compras_skins (id_usuario, skin) VALUES (:uid, :skin)")->execute([':uid' => $user_id, ':skin' => $skin]);
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         $stmtCheck = $pdo->prepare("SELECT id FROM compras_skins WHERE id_usuario = :uid AND skin = :skin");
         $stmtCheck->execute([':uid' => $user_id, ':skin' => $skin]);
         
-        if ($skin !== 'default' && $stmtCheck->rowCount() == 0) { echo json_encode(['erro' => 'Skin nÃ£o adquirida.']); exit; }
+        if ($skin !== 'default' && $stmtCheck->rowCount() == 0) { echo json_encode(['erro' => 'Skin não adquirida.']); exit; }
 
         $pdo->prepare("UPDATE usuarios SET skin_equipada = :skin WHERE id = :id")->execute([':skin' => $skin, ':id' => $user_id]);
         echo json_encode(['sucesso' => true]);
@@ -202,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 <!-- Header -->
 <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top">
     <div class="d-flex align-items-center gap-3">
-        <span class="fs-5">OlÃ¡, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+        <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
         <?php if (!empty($meu_perfil['is_admin']) && $meu_perfil['is_admin'] == 1): ?>
             <a href="../admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
         <?php endif; ?>
@@ -231,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             </div>
             
             <div class="overflow-auto" style="max-height: 300px;">
-                <!-- PadrÃ£o -->
+                <!-- Padrão -->
                 <div class="skin-card">
                     <div class="d-flex align-items-center">
                         <span class="skin-emoji">🐧</span>
@@ -247,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                     <?php endif; ?>
                 </div>
 
-                <!-- Skins do CatÃ¡logo -->
+                <!-- Skins do Catálogo -->
                 <?php foreach($catalogo_skins as $key => $data): 
                     $tenho = in_array($key, $minhas_skins);
                     $equipado = ($meu_perfil['skin_equipada'] == $key);
@@ -474,7 +474,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         ctx.save();
         ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 5;
 
-        // Recupera configuraÃ§Ã£o da skin atual (ou usa default)
+        // Recupera configuração da skin atual (ou usa default)
         const skinConfig = catalogoJS[currentSkin] || catalogoJS['default'];
 
         // 1. DESENHA O SKATE (Igual para todos)
@@ -491,13 +491,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         ctx.ellipse(x + w/2, y + h/2, w/2, h/2, 0, 0, Math.PI * 2); 
         ctx.fill();
         
-        // Barriga (Se for galinha ou outro muito claro, talvez nÃ£o contraste bem, mas ok)
+        // Barriga (Se for galinha ou outro muito claro, talvez não contraste bem, mas ok)
         ctx.fillStyle = skinConfig.bellyColor; 
         ctx.beginPath(); 
         ctx.ellipse(x + w/2 + 2, y + h/2 + 5, w/3, h/2.5, 0, 0, Math.PI * 2); 
         ctx.fill();
 
-        // Asa/BraÃ§o (Mesma cor do corpo)
+        // Asa/Braço (Mesma cor do corpo)
         ctx.fillStyle = skinConfig.bodyColor; 
         ctx.beginPath(); ctx.ellipse(x + 10, y + h/2 + 5, 5, 12, 0.5, 0, Math.PI * 2); ctx.fill();
         // Sombra da asa para destacar
@@ -517,7 +517,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             
-            // Ponto central da cabeÃ§a
+            // Ponto central da cabeça
             let headX = x + w/2 + 5; 
             let headY = y + 10;
             

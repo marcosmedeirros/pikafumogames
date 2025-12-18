@@ -1,5 +1,5 @@
 ﻿<?php
-// LIGA O MOSTRADOR DE ERROS (Remova em produÃ§Ã£o)
+// LIGA O MOSTRADOR DE ERROS (Remova em produção)
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -8,15 +8,15 @@ error_reporting(E_ALL);
 // session_start já foi chamado em games/index.php
 require '../core/conexao.php';
 
-// --- CONFIGURAÃ‡Ã•ES ---
+// --- CONFIGURAÇÕES ---
 $PONTOS_VITORIA = 10;
 $MAX_TENTATIVAS = 6;
 
-// 1. SeguranÃ§a
+// 1. Segurança
 if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
 $user_id = $_SESSION['user_id'];
 
-// --- 2. DADOS DO USUÃRIO (PARA O HEADER) ---
+// --- 2. DADOS DO USUÁRIO (PARA O HEADER) ---
 try {
     $stmtMe = $pdo->prepare("SELECT nome, pontos, is_admin FROM usuarios WHERE id = :id");
     $stmtMe->execute([':id' => $user_id]);
@@ -25,7 +25,7 @@ try {
     die("Erro perfil: " . $e->getMessage());
 }
 
-// --- FUNÃ‡ÃƒO AUXILIAR ---
+// --- FUNÇÃO AUXILIAR ---
 function removerAcentos($string) {
     $s = mb_strtoupper($string, 'UTF-8');
     $map = [
@@ -39,7 +39,7 @@ function removerAcentos($string) {
     return strtr($s, $map);
 }
 
-// --- LÃ“GICA DO DIA ---
+// --- LÓGICA DO DIA ---
 $dicionario = [
     'LUMAC', 'METAS', 'LUCRO', 'PRAZO', 'DADOS', 'IDEIA', 'PODER', 'NIVEL', 'ATIVO', 
     'CRISE', 'RISCO', 'ETICA', 'CLUBE', 'HONRA', 'LIDER', 'MORAL', 'GRUPO', 
@@ -62,14 +62,14 @@ srand($seed);
 $indice_do_dia = rand(0, count($dicionario) - 1);
 $PALAVRA_DO_DIA = $dicionario[$indice_do_dia]; 
 
-// --- VERIFICAÃ‡ÃƒO DE ESTADO ---
+// --- VERIFICAÇÃO DE ESTADO ---
 $hoje = date('Y-m-d');
 try {
     $stmtStatus = $pdo->prepare("SELECT * FROM termo_historico WHERE id_usuario = :uid AND data_jogo = :dt");
     $stmtStatus->execute([':uid' => $user_id, ':dt' => $hoje]);
     $dados_jogo = $stmtStatus->fetch(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    die("<div class='alert alert-danger'>Erro CrÃ­tico: Tabela 'termo_historico' incompleta.</div>");
+    die("<div class='alert alert-danger'>Erro Crítico: Tabela 'termo_historico' incompleta.</div>");
 }
 
 $chutes_realizados = [];
@@ -90,7 +90,7 @@ if ($dados_jogo) {
     }
 }
 
-// --- API DE VALIDAÃ‡ÃƒO ---
+// --- API DE VALIDAÇÃO ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
     header('Content-Type: application/json');
     
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
         exit;
     }
 
-    // LÃ³gica de Cores
+    // Lógica de Cores
     $resultado = array_fill(0, 5, '');
     $letras_correto = str_split($correto);
     $letras_chute = str_split($chute);
@@ -190,7 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        /* PADRÃƒO DARK MODE */
+        /* PADRÃO DARK MODE */
         body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
         
         /* Navbar Padronizada */
@@ -247,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
 <!-- Header Padronizado -->
 <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top">
     <div class="d-flex align-items-center gap-3">
-        <span class="fs-5">OlÃ¡, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+        <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
         <?php if (!empty($meu_perfil['is_admin']) && $meu_perfil['is_admin'] == 1): ?>
             <a href="../admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
         <?php endif; ?>

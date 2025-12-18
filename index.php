@@ -649,7 +649,28 @@ try {
         </div>
     </div>
 
-    <!-- SEÇÃO: ÚLTIMA APOSTA DISPONÍVEL -->
+    <!-- SEÇÃO: MINHAS STATS (CARDS NO TOPO) -->
+    <h6 class="section-title"><i class="bi bi-person-circle"></i>Minhas Estatísticas</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4">
+            <div class="stat-card">
+                <div class="stat-label"><i class="bi bi-coin me-2"></i>Saldo Atual</div>
+                <div class="stat-value"><?= number_format($usuario['pontos'], 0, ',', '.') ?> pts</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="stat-card">
+                <div class="stat-label"><i class="bi bi-cup-hot me-2"></i>Cafés Feitos</div>
+                <div class="stat-value"><?= $usuario['cafes_feitos'] ?? 0 ?></div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="stat-card">
+                <div class="stat-label"><i class="bi bi-activity me-2"></i>Apostas Ativas</div>
+                <div class="stat-value"><?= $minhas_apostas_abertas ?></div>
+            </div>
+        </div>
+    </div>
     <?php if($ultimo_evento_aberto): ?>
         <h6 class="section-title"><i class="bi bi-lightning-fill"></i>Última Aposta Disponível</h6>
         <div class="aposta-card">
@@ -723,26 +744,6 @@ try {
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
-        </div>
-
-        <!-- MINHAS STATS -->
-        <div class="ranking-card">
-            <div class="ranking-title"><i class="bi bi-person-circle me-2"></i>Minhas Stats</div>
-            <div class="ranking-item">
-                <span class="ranking-position">💰</span>
-                <span class="ranking-name">Saldo Atual</span>
-                <span class="ranking-value"><?= number_format($usuario['pontos'], 0, ',', '.') ?></span>
-            </div>
-            <div class="ranking-item">
-                <span class="ranking-position">☕</span>
-                <span class="ranking-name">Cafés Feitos</span>
-                <span class="ranking-value"><?= $usuario['cafes_feitos'] ?? 0 ?></span>
-            </div>
-            <div class="ranking-item">
-                <span class="ranking-position">📊</span>
-                <span class="ranking-name">Apostas Ativas</span>
-                <span class="ranking-value"><?= $minhas_apostas_abertas ?></span>
-            </div>
         </div>
     </div>
 
