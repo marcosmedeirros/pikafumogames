@@ -177,7 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     
                     <div class="text-center border-top border-secondary pt-3">
                         <p class="small text-muted mb-1">Já tem uma conta?</p>
-                        <a href="index.php" class="btn btn-outline-light btn-sm fw-bold w-50">Fazer Login</a>
+                        <a href="login.php" class="btn btn-outline-light btn-sm fw-bold w-50">Fazer Login</a>
                     </div>
                 </form>
             </div>
