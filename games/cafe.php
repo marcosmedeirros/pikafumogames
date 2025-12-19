@@ -146,7 +146,7 @@ $rankingComprou = $stmtRankComprou->fetchAll(PDO::FETCH_ASSOC);
                     
                     <!-- Botão Modal Comprar (Texto Atualizado) -->
                     <button type="button" class="btn btn-buy-add w-100 py-3 mb-2 rounded-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCafe" onclick="prepararModal('compra')">
-                        <i class="bi bi-cart-plus-fill me-2"></i>COMPREI PÃ“ (+15 pts)
+                        <i class="bi bi-cart-plus-fill me-2"></i>COMPREI PÓ (+15 pts)
                     </button>
 
                     <?php if($usuario['cafes_comprados'] > 0): ?>
