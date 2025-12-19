@@ -739,7 +739,7 @@ try {
         </div>
     </div>
     <?php if(!empty($ultimos_eventos_abertos)): ?>
-        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>3 Últimas Apostas Disponíveis</h6>
+        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>Últimas Apostas</h6>
         <?php foreach($ultimos_eventos_abertos as $evento): ?>
             <div class="card-evento">
                 <div class="d-flex justify-content-between align-items-start mb-3">
