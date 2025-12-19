@@ -445,16 +445,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <style>
         body { background: radial-gradient(circle at 20% 20%, #0f172a, #020617 60%); color: #e2e8f0; font-family: 'Inter', sans-serif; }
         .card { background: #0f172a; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.35); }
-        .card-face { width: 48px; height: 68px; border-radius: 8px; background: #fff; color: #0f172a; display: grid; place-items: center; font-weight: 800; }
+        .card-face { width: 52px; height: 72px; border-radius: 10px; background: #fff; color: #0f172a; display: grid; place-items: center; font-weight: 900; }
         .pill { border-radius: 999px; padding: 4px 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05); font-size: 12px; }
         .seat-dim { opacity: 0.5; }
         .table-shell { position: absolute; inset: 0; pointer-events: none; }
-        .table-rim { position: absolute; inset: 0; border-radius: 999px; background: radial-gradient(circle at 50% 30%, rgba(255,255,255,0.08), transparent 45%), linear-gradient(135deg, #4e2f1a, #2e180c 40%, #4e2f1a); box-shadow: inset 0 0 40px rgba(0,0,0,0.8); transform: scale(1.02); }
-        .table-felt { position: absolute; inset: 12px; border-radius: 900px; background: radial-gradient(circle at 50% 30%, rgba(34,197,94,0.08), transparent 40%), radial-gradient(circle at 30% 70%, rgba(16,185,129,0.08), transparent 45%), #063b2b; box-shadow: inset 0 0 60px rgba(0,0,0,0.6); filter: drop-shadow(0 12px 32px rgba(0,0,0,0.45)); }
+        .table-rim { position: absolute; inset: 0; border-radius: 999px; background: linear-gradient(145deg, #6b3d20 0%, #4b260f 40%, #2f170a 100%); box-shadow: inset 0 0 40px rgba(0,0,0,0.85), 0 20px 45px rgba(0,0,0,0.65); transform: scale(1.03); }
+        .table-felt { position: absolute; inset: 16px; border-radius: 900px; background: radial-gradient(circle at 50% 30%, rgba(255,255,255,0.04), transparent 42%), radial-gradient(circle at 35% 70%, rgba(255,255,255,0.05), transparent 48%), #0a5e3c; box-shadow: inset 0 0 70px rgba(0,0,0,0.65), inset 0 0 20px rgba(0,0,0,0.35); filter: drop-shadow(0 14px 36px rgba(0,0,0,0.5)); }
         .seat-markers { position: absolute; inset: 0; }
-        .seat-dot { position: absolute; width: 20px; height: 20px; border-radius: 50%; background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 50%, #94a3b8 100%); box-shadow: 0 0 12px rgba(255,255,255,0.6); opacity: 0.8; }
-        .seat-dot::after { content: ''; position: absolute; inset: -10px; border-radius: 50%; border: 1px dashed rgba(255,255,255,0.25); }
-        .glow-ring { position: absolute; inset: 30px; border-radius: 999px; border: 1px dashed rgba(16,185,129,0.25); }
+        .seat-dot { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle, #f8fafc 0%, #e2e8f0 55%, #94a3b8 100%); box-shadow: 0 0 14px rgba(255,255,255,0.75); opacity: 0.85; }
+        .seat-dot::after { content: ''; position: absolute; inset: -12px; border-radius: 50%; border: 1px dashed rgba(255,255,255,0.22); }
+        .glow-ring { position: absolute; inset: 36px; border-radius: 999px; border: 1px dashed rgba(16,185,129,0.25); }
+        .seat-layer { min-height: 430px; }
+        .seat-spot { position: absolute; width: 170px; height: 160px; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .bet-circle { width: 94px; height: 94px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.14); box-shadow: inset 0 0 14px rgba(0,0,0,0.5); background: radial-gradient(circle, rgba(255,255,255,0.08), rgba(0,0,0,0.22)); display: grid; place-items: center; color: #e2e8f0; font-weight: 800; letter-spacing: 0.04em; }
+        .seat-cards { display: flex; gap: 6px; }
+        .seat-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: #9ae6b4; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -500,7 +505,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="seats">
+                        <div id="seats" class="seat-layer relative w-full">
                         </div>
                     </div>
                 </div>
@@ -557,6 +562,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             .catch(() => ({ ok: false, error: 'Falha na conexão.' }));
     };
 
+    const seatPositions = [
+        { top: '78%', left: '18%' },
+        { top: '86%', left: '42%' },
+        { top: '86%', left: '58%' },
+        { top: '78%', left: '82%' },
+        { top: '32%', left: '30%' },
+        { top: '32%', left: '70%' },
+    ];
+
     const dealerCardsEl = document.getElementById('dealer-cards');
     const dealerTotalEl = document.getElementById('dealer-total');
     const roundLabel = document.getElementById('round-label');
@@ -598,7 +612,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         seatsEl.innerHTML = '';
         seats.forEach(seat => {
             const div = document.createElement('div');
-            div.className = 'border border-emerald-800/40 rounded-xl p-3 bg-emerald-950/40 flex flex-col gap-2 ' + (seat.user_id ? '' : 'seat-dim');
+            const pos = seatPositions[seat.seat - 1] || { top: '50%', left: '50%' };
+            div.className = 'seat-spot ' + (seat.user_id ? '' : 'seat-dim');
+            div.style.top = pos.top;
+            div.style.left = pos.left;
             const statusLabel = seat.status === 'playing'
                 ? 'Jogando'
                 : seat.status === 'busted'
@@ -606,20 +623,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     : seat.status === 'betting'
                         ? 'Apostando'
                         : seat.user_id ? 'Sentado' : 'Vago';
+            const outcomeText = seat.outcome ? seat.outcome : '';
+            const highlight = (mySeat !== null && seat.seat - 1 === mySeat) ? 'ring-2 ring-emerald-400/70' : '';
             div.innerHTML = `
-                <div class="flex justify-between items-center">
-                    <span class="text-xs uppercase tracking-[0.2em] text-emerald-200">Lugar ${seat.seat}</span>
-                    <span class="pill text-emerald-100">${statusLabel}</span>
-                </div>
-                <div class="text-sm font-black">${seat.name || '---'}</div>
-                <div class="text-xs text-emerald-100">Aposta: ${seat.bet}</div>
-                <div class="text-xs text-emerald-100">Total: ${seat.total || 0}</div>
-                <div class="flex gap-2">${renderCards(seat.hand)}</div>
-                <div class="text-xs text-slate-300">${seat.outcome ? seat.outcome : ''}</div>
+                <div class="seat-tag">Lugar ${seat.seat} · ${statusLabel}</div>
+                <div class="bet-circle ${highlight}">${seat.bet > 0 ? seat.bet : 'Aposta'}</div>
+                <div class="seat-cards">${renderCards(seat.hand)}</div>
+                <div class="text-xs text-emerald-100">Total: ${seat.total || 0} ${outcomeText ? '· ' + outcomeText : ''}</div>
+                <div class="text-sm font-black text-emerald-50">${seat.name || '---'}</div>
             `;
-            if (mySeat !== null && seat.seat - 1 === mySeat) {
-                div.classList.add('ring-2', 'ring-emerald-400/60');
-            }
             seatsEl.appendChild(div);
         });
     }
