@@ -59,25 +59,26 @@ try {
     $top_5_cafes = [];
 }
 
-// 4. Último Evento Aberto (para exibir no card e no painel)
+// 4. 3 Últimos Eventos Abertos (para exibir no card e no painel)
 try {
     $stmt = $pdo->query("
         SELECT e.id, e.nome, e.data_limite 
         FROM eventos e 
         WHERE e.status = 'aberta' AND e.data_limite > NOW() 
         ORDER BY e.data_limite ASC 
-        LIMIT 1
+        LIMIT 3
     ");
-    $ultimo_evento_aberto = $stmt->fetch(PDO::FETCH_ASSOC);
+    $ultimos_eventos_abertos = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     
-    // Busca opções do evento
-    if ($ultimo_evento_aberto) {
+    // Busca opções para cada evento
+    foreach ($ultimos_eventos_abertos as &$evento) {
         $stmtOpcoes = $pdo->prepare("SELECT id, descricao, odd FROM opcoes WHERE evento_id = :eid ORDER BY id ASC");
-        $stmtOpcoes->execute([':eid' => $ultimo_evento_aberto['id']]);
-        $ultimo_evento_aberto['opcoes'] = $stmtOpcoes->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $stmtOpcoes->execute([':eid' => $evento['id']]);
+        $evento['opcoes'] = $stmtOpcoes->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+    unset($evento);
 } catch (PDOException $e) {
-    $ultimo_evento_aberto = null;
+    $ultimos_eventos_abertos = [];
 }
 
 // 5. Eventos Abertos (count)
@@ -418,6 +419,72 @@ try {
             margin-top: 5px;
         }
 
+        /* ===== CARD EVENTO (APOSTAS) ===== */
+        .card-evento {
+            background-color: var(--secondary-dark);
+            border: 1px solid var(--border-dark);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            transition: all 0.3s;
+        }
+
+        .card-evento:hover {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.1);
+        }
+
+        .evento-titulo {
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .evento-data {
+            font-size: 0.85rem;
+            color: #aaa;
+        }
+
+        .opcoes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .card-opcao {
+            background: #252525;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .card-opcao:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-green);
+            background: #2b2b2b;
+        }
+
+        .opcao-nome {
+            font-weight: 600;
+            color: #eee;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .opcao-odd {
+            color: var(--accent-green);
+            font-weight: 800;
+            font-size: 1.5em;
+            display: block;
+            margin-bottom: 12px;
+            text-shadow: 0 0 5px rgba(0, 230, 118, 0.2);
+        }
+
         .status-badge {
             display: inline-block;
             padding: 6px 14px;
@@ -671,31 +738,33 @@ try {
             </div>
         </div>
     </div>
-    <?php if($ultimo_evento_aberto): ?>
-        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>Última Aposta Disponível</h6>
-        <div class="aposta-card">
-            <div class="aposta-label">Evento</div>
-            <div class="aposta-evento"><?= htmlspecialchars($ultimo_evento_aberto['nome']) ?></div>
-            
-            <div class="aposta-details">
-                <div class="aposta-detail-item">
-                    <div class="aposta-detail-label">Fecha em</div>
-                    <div class="aposta-detail-value"><?= date('d/m/Y H:i', strtotime($ultimo_evento_aberto['data_limite'])) ?></div>
+    <?php if(!empty($ultimos_eventos_abertos)): ?>
+        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>3 Últimas Apostas Disponíveis</h6>
+        <?php foreach($ultimos_eventos_abertos as $evento): ?>
+            <div class="card-evento">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <div class="evento-titulo"><?= htmlspecialchars($evento['nome']) ?></div>
+                        <small class="evento-data">
+                            <i class="bi bi-clock-history me-1 text-warning"></i>
+                            Encerra em: <?= date('d/m/Y às H:i', strtotime($evento['data_limite'])) ?>
+                        </small>
+                    </div>
                 </div>
-                <?php if(!empty($ultimo_evento_aberto['opcoes'])): ?>
-                    <?php foreach($ultimo_evento_aberto['opcoes'] as $opcao): ?>
-                        <div class="aposta-detail-item">
-                            <div class="aposta-detail-label"><?= htmlspecialchars($opcao['descricao']) ?></div>
-                            <div class="aposta-detail-value"><?= number_format($opcao['odd'], 2) ?>x</div>
+
+                <div class="opcoes-grid">
+                    <?php foreach($evento['opcoes'] as $opcao): ?>
+                        <div class="card-opcao">
+                            <span class="opcao-nome"><?= htmlspecialchars($opcao['descricao']) ?></span>
+                            <span class="opcao-odd"><?= number_format($opcao['odd'], 2) ?>x</span>
+                            <a href="games/index.php?game=apostas" class="btn btn-sm btn-outline-success w-100" style="font-size: 0.85rem;">Apostar</a>
                         </div>
                     <?php endforeach; ?>
-                <?php endif; ?>
+                </div>
             </div>
-
-            <a href="games/index.php?game=apostas" class="btn-play-secondary">Ver todas as apostas</a>
-        </div>
+        <?php endforeach; ?>
     <?php else: ?>
-        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>Última Aposta Disponível</h6>
+        <h6 class="section-title"><i class="bi bi-lightning-fill"></i>3 Últimas Apostas Disponíveis</h6>
         <div class="empty-state">
             <div class="empty-icon"><i class="bi bi-inbox"></i></div>
             <div class="empty-text">Nenhum evento disponível no momento</div>
