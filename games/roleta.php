@@ -1,9 +1,9 @@
 <?php
-// roleta.php - CASSINO PIKAFUMO (ROLETA EUROPEIA 🎡) - MODO REAL (LIMITE 15)
+// roleta.php - CASSINO PIKAFUMO (ROLETA EUROPEIA 🎡) - MODO REAL
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 session_start();
-require 'conexao.php';
+require '../core/conexao.php';
 
 // 1. Segurança
 if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; }
@@ -42,7 +42,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         foreach ($apostas as $a) $totalApostado += $a['montante'];
         
         if ($totalApostado <= 0) die(json_encode(['erro' => 'Faça uma aposta!']));
-        if ($totalApostado > 15) die(json_encode(['erro' => 'Limite de Segurança: Máx 15 pontos totais.']));
 
         try {
             $pdo->beginTransaction();
@@ -175,7 +174,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         .chip-1 { background: #9e9e9e; }
         .chip-5 { background: #d32f2f; }
         .chip-10 { background: #1976d2; }
-        .chip-15 { background: #fbc02d; color: black; border-style: solid; }
+        .chip-25 { background: #7b1fa2; color: white; border-style: solid; }
+        .chip-50 { background: #ff6f00; color: white; border-style: solid; }
 
         /* SELETOR DE FICHAS */
         .chip-selector { display: flex; justify-content: center; gap: 15px; margin: 20px 0; }
@@ -214,15 +214,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
     </div>
     <div class="d-flex align-items-center gap-3">
-        <a href="painel.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar</a>
+        <a href="../index.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar</a>
         <span class="saldo-badge" id="saldoDisplay"><?= number_format($meu_perfil['pontos'], 0, ',', '.') ?> pts</span>
     </div>
 </div>
 
 <div class="container mt-4 pb-5">
     <div class="text-center mb-4">
-        <h1 class="display-4 fw-bold text-white">🎡 ROLETA</h1>
-        <p class="text-muted">Apostas (Máx 15 pontos)</p>
+        <h1 class="display-4 fw-bold text-white d-flex align-items-center justify-content-center gap-2">
+            🎡 ROLETA
+            <i class="bi bi-info-circle cursor-pointer text-info" onclick="togglePayouts()" style="font-size: 1.2em; opacity: 0.8;"></i>
+        </h1>
+        <p class="text-muted">Apostas</p>
+    </div>
+    
+    <!-- Modal de Payouts -->
+    <div id="payoutsModal" class="modal fade" tabindex="-1" style="display: none;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark border-secondary">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title text-info"><i class="bi bi-bar-chart-fill me-2"></i>Tabela de Payouts</h5>
+                    <button type="button" class="btn-close btn-close-white" onclick="togglePayouts()"></button>
+                </div>
+                <div class="modal-body text-light">
+                    <div class="list-group list-group-flush bg-dark">
+                        <div class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center py-3">
+                            <span><i class="bi bi-circle-fill text-danger me-2"></i>Cor (Vermelho/Preto)</span>
+                            <span class="badge bg-warning text-dark fw-bold">2x</span>
+                        </div>
+                        <div class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center py-3">
+                            <span><i class="bi bi-dice-1-fill me-2"></i>Número (0-36)</span>
+                            <span class="badge bg-danger fw-bold">36x</span>
+                        </div>
+                        <div class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center py-3">
+                            <span><i class="bi bi-grid-3x2-gap-fill me-2"></i>Dúzia (1-12, 13-24, 25-36)</span>
+                            <span class="badge bg-success fw-bold">3x</span>
+                        </div>
+                        <div class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center py-3">
+                            <span><i class="bi bi-arrow-left-right me-2"></i>Metade (1-18, 19-36)</span>
+                            <span class="badge bg-warning text-dark fw-bold">2x</span>
+                        </div>
+                        <div class="list-group-item bg-dark border-secondary d-flex justify-content-between align-items-center py-3">
+                            <span><i class="bi bi-activity me-2"></i>Paridade (Par/Ímpar)</span>
+                            <span class="badge bg-warning text-dark fw-bold">2x</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- RODA -->
@@ -284,7 +323,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         <div class="chip-btn chip-1 active" onclick="selectChip(1, this)">1</div>
         <div class="chip-btn chip-5" onclick="selectChip(5, this)">5</div>
         <div class="chip-btn chip-10" onclick="selectChip(10, this)">10</div>
-        <div class="chip-btn chip-15" onclick="selectChip(15, this)">15</div>
+        <div class="chip-btn chip-25" onclick="selectChip(25, this)">25</div>
+        <div class="chip-btn chip-50" onclick="selectChip(50, this)">50</div>
     </div>
 
     <div class="text-center mt-3 d-flex justify-content-center gap-3">
@@ -300,6 +340,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     let bets = []; 
     let isSpinning = false;
     let currentRotation = 0;
+
+    // Função para abrir/fechar modal de payouts
+    function togglePayouts() {
+        const modal = document.getElementById('payoutsModal');
+        const isHidden = modal.style.display === 'none';
+        modal.style.display = isHidden ? 'block' : 'none';
+        if (isHidden) {
+            modal.classList.add('show');
+        } else {
+            modal.classList.remove('show');
+        }
+    }
+
+    // Fechar modal ao clicar fora
+    document.addEventListener('click', function(event) {
+        const modal = document.getElementById('payoutsModal');
+        if (modal && event.target === modal) {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+        }
+    });
 
     // Ordem exata da roda para desenho e cálculo
     const wheelOrder = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
@@ -376,7 +437,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         if (isSpinning) return;
 
         let total = bets.reduce((sum, b) => sum + b.montante, 0);
-        if (total + currentChip > 15) { alert("Limite de 15 pontos na mesa!"); return; }
+        // Sem limite de apostas
 
         let existing = bets.find(b => b.tipo === tipo && b.valor === valor);
         if (existing) {

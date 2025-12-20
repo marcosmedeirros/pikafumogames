@@ -700,6 +700,14 @@ try {
         </div>
 
         <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/roleta.php" class="game-card" style="--accent: #d32f2f;">
+                <span class="game-icon">🎡</span>
+                <div class="game-title">Roleta</div>
+                <div class="game-subtitle">Cassino Europeu</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
             <a href="user/ranking.php" class="game-card" style="--accent: #ffc107;">
                 <span class="game-icon">🏆</span>
                 <div class="game-title">Ranking Geral</div>
@@ -712,6 +720,14 @@ try {
                 <span class="game-icon">💰</span>
                 <div class="game-title">Apostas</div>
                 <div class="game-subtitle">Faça suas apostas agora</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/pnipnaval.php" class="game-card" style="--accent: #0277bd;">
+                <span class="game-icon">🚢</span>
+                <div class="game-title">Batalha Naval</div>
+                <div class="game-subtitle">Desafie amigos</div>
             </a>
         </div>
     </div>
