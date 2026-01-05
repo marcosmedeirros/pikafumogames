@@ -4,6 +4,7 @@
 session_start();
 require '../core/conexao.php';
 require '../core/avatar.php';
+require '../core/sequencia_dias.php';
 
 // 1. Segurança básica
 if (!isset($_SESSION['user_id'])) {
@@ -47,6 +48,36 @@ try {
 
 } catch (Exception $e) {
     // Silencia erros caso as tabelas ainda não existam ou estejam vazias
+}
+
+// 3.5. BUSCA AS MAIORES SEQUÊNCIAS DE TERMO E MEMÓRIA
+$maior_sequencia_termo = null;
+$maior_sequencia_memoria = null;
+
+try {
+    $stmt_termo = $pdo->prepare("
+        SELECT u.id, u.nome, usd.sequencia_atual 
+        FROM usuario_sequencias_dias usd
+        JOIN usuarios u ON u.id = usd.user_id
+        WHERE usd.jogo = 'termo' AND usd.sequencia_atual > 0
+        ORDER BY usd.sequencia_atual DESC
+        LIMIT 1
+    ");
+    $stmt_termo->execute();
+    $maior_sequencia_termo = $stmt_termo->fetch(PDO::FETCH_ASSOC);
+
+    $stmt_memoria = $pdo->prepare("
+        SELECT u.id, u.nome, usd.sequencia_atual 
+        FROM usuario_sequencias_dias usd
+        JOIN usuarios u ON u.id = usd.user_id
+        WHERE usd.jogo = 'memoria' AND usd.sequencia_atual > 0
+        ORDER BY usd.sequencia_atual DESC
+        LIMIT 1
+    ");
+    $stmt_memoria->execute();
+    $maior_sequencia_memoria = $stmt_memoria->fetch(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    // Silencia erros caso a tabela não exista
 }
 
 // 4. BUSCA RANKING (LUCRO LÍQUIDO + SALDO) 🧠
@@ -278,6 +309,18 @@ try {
 
                                         <?php if($user['id'] == $id_rei_pnip): ?>
                                             <span class="badge tag-badge tag-pnip ms-2" title="Almirante da Batalha Naval (Mais vitórias)">🚢 PNIP</span>
+                                        <?php endif; ?>
+
+                                        <?php if($maior_sequencia_termo && $maior_sequencia_termo['id'] == $user['id'] && $maior_sequencia_termo['sequencia_atual'] > 0): ?>
+                                            <span style="background: linear-gradient(135deg, #ff006e, #8338ec); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 6px; display: inline-block;">
+                                                📝 Termo x<?= $maior_sequencia_termo['sequencia_atual'] ?>
+                                            </span>
+                                        <?php endif; ?>
+
+                                        <?php if($maior_sequencia_memoria && $maior_sequencia_memoria['id'] == $user['id'] && $maior_sequencia_memoria['sequencia_atual'] > 0): ?>
+                                            <span style="background: linear-gradient(135deg, #00d4ff, #0099ff); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 6px; display: inline-block;">
+                                                🧠 Memória x<?= $maior_sequencia_memoria['sequencia_atual'] ?>
+                                            </span>
                                         <?php endif; ?>
 
                                         <?php if($user['id'] == $user_id): ?>
