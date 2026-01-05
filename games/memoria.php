@@ -10,7 +10,7 @@ require '../core/conexao.php';
 
 // --- CONFIGURAÇÕES ---
 $PONTOS_VITORIA = 10;
-$LIMITE_MOVIMENTOS = 16; 
+$LIMITE_MOVIMENTOS = 20; 
 
 // 1. Segurança
 if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
