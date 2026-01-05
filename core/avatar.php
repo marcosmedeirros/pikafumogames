@@ -341,7 +341,7 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
             'item_id' => $item_id,
             'item_nome' => $item['nome'],
             'raridade' => $raridade,
-            'pontos_restantes' => $usuarioAtual ? $usuarioAtual['pontos'] : null
+            'pontos_restantes' => $usuarioAtual ? (int)$usuarioAtual['pontos'] : 0
         ];
         
     } catch (PDOException $e) {

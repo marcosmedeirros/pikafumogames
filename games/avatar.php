@@ -484,18 +484,38 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
 
             let winner = lotteryPool[Math.floor(Math.random()*lotteryPool.length)];
             try {
-                const params = new URLSearchParams(); params.append('api','abrir_caixa'); params.append('tipo_caixa', tierKey);
-                const resp = await fetch(window.location.href, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
+                const fd = new FormData();
+                fd.append('api', 'abrir_caixa');
+                fd.append('tipo_caixa', tierKey);
+                const resp = await fetch(window.location.href, { method: 'POST', body: fd });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                 const data = await resp.json();
+                console.log('Resposta da caixa:', data);
                 if(data && data.sucesso){
-                    state.balance = data.pontos_restantes; updateBalance();
-                    const cat = data.categoria; const key = data.item_id;
+                    state.balance = data.pontos_restantes; 
+                    updateBalance();
+                    const cat = data.categoria; 
+                    const key = data.item_id;
                     if(allItems[cat] && allItems[cat][key]){
                         winner = { ...allItems[cat][key], id:key, category:cat };
                     }
                 }
-                else if(data && data.mensagem){ alert(data.mensagem); }
-            } catch(e){ console.error('Falha ao abrir caixa via API', e); }
+                else if(data && data.erro){ 
+                    alert('Erro: ' + data.erro); 
+                    modal.classList.add('hidden');
+                    return;
+                }
+                else if(data && data.mensagem){ 
+                    alert(data.mensagem); 
+                    modal.classList.add('hidden');
+                    return;
+                }
+            } catch(e){ 
+                console.error('Falha ao abrir caixa via API', e); 
+                alert('Erro ao abrir caixa: ' + e.message);
+                modal.classList.add('hidden');
+                return;
+            }
 
             const targetIndex = 75; carousel.children[targetIndex].innerHTML = getItemPreview(winner, winner.category, winner.id); carousel.children[targetIndex].classList.add('bg-white/5');
             setTimeout(()=>{
