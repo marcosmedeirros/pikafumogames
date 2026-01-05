@@ -290,9 +290,14 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
         $stmt->execute([':id' => $user_id]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
         
+        if (!$usuario) {
+            @file_put_contents($logFile, "  ❌ Usuário não encontrado\n", FILE_APPEND | LOCK_EX);
+            return ['sucesso' => false, 'mensagem' => 'Usuário não encontrado'];
+        }
+        
         @file_put_contents($logFile, "  Saldo: {$usuario['pontos']} pts | Custo: {$caixa['preco']} pts\n", FILE_APPEND | LOCK_EX);
         
-        if (!$usuario || $usuario['pontos'] < $caixa['preco']) {
+        if ($usuario['pontos'] < $caixa['preco']) {
             $msg = "❌ Saldo insuficiente";
             @file_put_contents($logFile, "  $msg\n", FILE_APPEND | LOCK_EX);
             return ['sucesso' => false, 'mensagem' => 'Pontos insuficientes'];
@@ -356,8 +361,9 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
         $stmt = $pdo->prepare("SELECT pontos FROM usuarios WHERE id = :id");
         $stmt->execute([':id' => $user_id]);
         $usuarioAtual = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        @file_put_contents($logFile, "  ✅ Sucesso! Pontos restantes: {$usuarioAtual['pontos']}\n", FILE_APPEND | LOCK_EX);
+        
+        $pontos_finais = $usuarioAtual ? (int)$usuarioAtual['pontos'] : 0;
+        @file_put_contents($logFile, "  ✅ Sucesso! Pontos restantes: $pontos_finais\n", FILE_APPEND | LOCK_EX);
 
         return [
             'sucesso' => true,
@@ -366,16 +372,20 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
             'item_id' => $item_id,
             'item_nome' => $item['nome'],
             'raridade' => $raridade,
-            'pontos_restantes' => $usuarioAtual ? (int)$usuarioAtual['pontos'] : 0
+            'pontos_restantes' => $pontos_finais
         ];
         
     } catch (PDOException $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         $erro = $e->getMessage();
         @file_put_contents($logFile, "  ❌ PDOException: $erro\n", FILE_APPEND | LOCK_EX);
+        error_log("abrirLootBox PDOException: $erro");
         return ['sucesso' => false, 'mensagem' => 'Erro ao abrir caixa'];
     } catch (Exception $e) {
-        @file_put_contents($logFile, "  ❌ Exception: " . $e->getMessage() . "\n", FILE_APPEND | LOCK_EX);
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        $erro = $e->getMessage();
+        @file_put_contents($logFile, "  ❌ Exception: $erro\n", FILE_APPEND | LOCK_EX);
+        error_log("abrirLootBox Exception: $erro");
         return ['sucesso' => false, 'mensagem' => 'Erro desconhecido'];
     }
 }
