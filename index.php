@@ -84,7 +84,23 @@ try {
     $sequencias_usuario = [];
 }
 
-// 5. 3 Últimos Eventos Abertos (para exibir no card e no painel)
+// 5. Obter usuário com mais cafés feitos
+$maior_cafe = null;
+
+try {
+    $stmt = $pdo->query("
+        SELECT id, nome, cafes_feitos 
+        FROM usuarios 
+        WHERE cafes_feitos > 0 
+        ORDER BY cafes_feitos DESC 
+        LIMIT 1
+    ");
+    $maior_cafe = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $maior_cafe = null;
+}
+
+// 6. 3 Últimos Eventos Abertos (para exibir no card e no painel)
 try {
     $stmt = $pdo->query("
         SELECT e.id, e.nome, e.data_limite 
@@ -106,7 +122,7 @@ try {
     $ultimos_eventos_abertos = [];
 }
 
-// 5. Eventos Abertos (count)
+// 7. Eventos Abertos (count)
 try {
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM eventos WHERE status = 'aberta'");
     $total_eventos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
@@ -114,7 +130,7 @@ try {
     $total_eventos = 0;
 }
 
-// 6. Minhas Apostas Abertas (count)
+// 8. Minhas Apostas Abertas (count)
 try {
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as total 
@@ -900,6 +916,11 @@ try {
                                 <?php if(isset($sequencias_usuario[$jogador['id']]['memoria']) && $sequencias_usuario[$jogador['id']]['memoria'] > 0): ?>
                                     <span style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-flex; align-items: center; gap: 3px;">
                                         🧠 Memória x<?= $sequencias_usuario[$jogador['id']]['memoria'] ?>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if($maior_cafe && $maior_cafe['id'] == $jogador['id'] && $maior_cafe['cafes_feitos'] > 0): ?>
+                                    <span style="background: linear-gradient(135deg, #8B4513, #D2691E); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-flex; align-items: center; gap: 3px;">
+                                        ☕ Café x<?= $maior_cafe['cafes_feitos'] ?>
                                     </span>
                                 <?php endif; ?>
                             </div>

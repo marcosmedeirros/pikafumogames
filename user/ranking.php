@@ -74,6 +74,22 @@ try {
     $sequencias_usuario = [];
 }
 
+// 3.6. BUSCA USUÁRIO COM MAIS CAFÉS FEITOS
+$maior_cafe = null;
+
+try {
+    $stmt = $pdo->query("
+        SELECT id, nome, cafes_feitos 
+        FROM usuarios 
+        WHERE cafes_feitos > 0 
+        ORDER BY cafes_feitos DESC 
+        LIMIT 1
+    ");
+    $maior_cafe = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $maior_cafe = null;
+}
+
 // 4. BUSCA RANKING (LUCRO LÍQUIDO + SALDO) 🧠
 try {
     $sql = "
@@ -314,6 +330,12 @@ try {
                                         <?php if(isset($sequencias_usuario[$user['id']]['memoria']) && $sequencias_usuario[$user['id']]['memoria'] > 0): ?>
                                             <span style="background: linear-gradient(135deg, #00d4ff, #0099ff); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 6px; display: inline-block;">
                                                 🧠 Memória x<?= $sequencias_usuario[$user['id']]['memoria'] ?>
+                                            </span>
+                                        <?php endif; ?>
+
+                                        <?php if($maior_cafe && $maior_cafe['id'] == $user['id'] && $maior_cafe['cafes_feitos'] > 0): ?>
+                                            <span style="background: linear-gradient(135deg, #8B4513, #D2691E); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 6px; display: inline-block;">
+                                                ☕ Café x<?= $maior_cafe['cafes_feitos'] ?>
                                             </span>
                                         <?php endif; ?>
 
