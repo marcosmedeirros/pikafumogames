@@ -133,19 +133,19 @@ $avatar = obterCustomizacaoAvatar($pdo, $user_id);
         <form method="POST" style="display: inline;">
             <input type="hidden" name="teste" value="abrir">
             <input type="hidden" name="tipo" value="basica">
-            <button onclick="return testLootBox(this)">Testar Caixa Bolicheiro (30 pts)</button>
+            <button onclick="return testLootBox(this)">Testar Caixa Bolicheiro (20 pts)</button>
         </form>
 
         <form method="POST" style="display: inline;">
             <input type="hidden" name="teste" value="abrir">
             <input type="hidden" name="tipo" value="top">
-            <button onclick="return testLootBox(this)">Testar Caixa Pnip (50 pts)</button>
+            <button onclick="return testLootBox(this)">Testar Caixa Pnip (30 pts)</button>
         </form>
 
         <form method="POST" style="display: inline;">
             <input type="hidden" name="teste" value="abrir">
             <input type="hidden" name="tipo" value="premium">
-            <button onclick="return testLootBox(this)">Testar Caixa PDSA (80 pts)</button>
+            <button onclick="return testLootBox(this)">Testar Caixa PDSA (40 pts)</button>
         </form>
 
         <div id="resultado" style="margin-top: 20px;"></div>

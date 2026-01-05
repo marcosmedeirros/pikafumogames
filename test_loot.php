@@ -50,8 +50,8 @@ echo "\n--- Testando função abrirLootBox ---\n";
 // Teste 1: Verificar saldo
 echo "Saldo atual: " . $usuario['pontos'] . " pts\n";
 
-// Teste 2: Tentar abrir caixa básica (30 pts)
-echo "Tentando abrir caixa 'basica' (custo: 30 pts)...\n";
+// Teste 2: Tentar abrir caixa básica (20 pts)
+echo "Tentando abrir caixa 'basica' (custo: 20 pts)...\n";
 $resultado = abrirLootBox($pdo, $user_id, 'basica');
 echo "Resultado: " . json_encode($resultado, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n";
 
