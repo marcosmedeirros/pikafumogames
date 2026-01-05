@@ -13,6 +13,7 @@
 session_start();
 require 'core/conexao.php';
 require 'core/avatar.php';
+require 'core/sequencia_dias.php';
 
 // Segurança
 if (!isset($_SESSION['user_id'])) {
@@ -60,7 +61,38 @@ try {
     $top_5_cafes = [];
 }
 
-// 4. 3 Últimos Eventos Abertos (para exibir no card e no painel)
+// 4. Obter maiores sequências de Termo e Memória
+$maior_sequencia_termo = null;
+$maior_sequencia_memoria = null;
+
+try {
+    // Maior sequência de Termo
+    $stmt = $pdo->query("
+        SELECT u.id, u.nome, usd.sequencia_atual 
+        FROM usuario_sequencias_dias usd
+        JOIN usuarios u ON usd.user_id = u.id
+        WHERE usd.jogo = 'termo' 
+        ORDER BY usd.sequencia_atual DESC 
+        LIMIT 1
+    ");
+    $maior_sequencia_termo = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Maior sequência de Memória
+    $stmt = $pdo->query("
+        SELECT u.id, u.nome, usd.sequencia_atual 
+        FROM usuario_sequencias_dias usd
+        JOIN usuarios u ON usd.user_id = u.id
+        WHERE usd.jogo = 'memoria' 
+        ORDER BY usd.sequencia_atual DESC 
+        LIMIT 1
+    ");
+    $maior_sequencia_memoria = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $maior_sequencia_termo = null;
+    $maior_sequencia_memoria = null;
+}
+
+// 5. 3 Últimos Eventos Abertos (para exibir no card e no painel)
 try {
     $stmt = $pdo->query("
         SELECT e.id, e.nome, e.data_limite 
@@ -865,7 +897,21 @@ try {
                                 echo renderizarAvatarSVG($avatar_jogador, 32);
                             ?>
                         </div>
-                        <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
+                        <div style="display: flex; flex-direction: column; flex: 1; margin: 0 10px;">
+                            <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
+                            <div style="display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
+                                <?php if($maior_sequencia_termo && $maior_sequencia_termo['id'] == $jogador['id'] && $maior_sequencia_termo['sequencia_atual'] > 0): ?>
+                                    <span style="background: linear-gradient(135deg, #ff006e, #8338ec); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-flex; align-items: center; gap: 3px;">
+                                        📝 Termo x<?= $maior_sequencia_termo['sequencia_atual'] ?>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if($maior_sequencia_memoria && $maior_sequencia_memoria['id'] == $jogador['id'] && $maior_sequencia_memoria['sequencia_atual'] > 0): ?>
+                                    <span style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-flex; align-items: center; gap: 3px;">
+                                        🧠 Memória x<?= $maior_sequencia_memoria['sequencia_atual'] ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                         <span class="ranking-value">
                             <?= number_format($jogador['lucro_liquido'], 0, ',', '.') ?> pts
                         </span>
