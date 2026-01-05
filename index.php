@@ -733,13 +733,6 @@ try {
             </a>
         </div>
 
-        <div class="col-6 col-md-4 col-lg-3">
-            <a href="games/avatar.php" class="game-card" style="--accent: #9d4edd;">
-                <span class="game-icon">🤖</span>
-                <div class="game-title">Avatar</div>
-                <div class="game-subtitle">Customizar seu avatar</div>
-            </a>
-        </div>
 
         <div class="col-6 col-md-4 col-lg-3">
             <a href="games/pnipnaval.php" class="game-card" style="--accent: #00bcd4;">
