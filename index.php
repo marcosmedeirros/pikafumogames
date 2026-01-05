@@ -1029,23 +1029,6 @@ try {
                         </div>
                         <div style="display: flex; flex-direction: column; flex: 1; margin: 0 10px;">
                             <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
-                            <div style="display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap;">
-                                <?php if(isset($sequencias_usuario[$jogador['id']]['termo']) && $sequencias_usuario[$jogador['id']]['termo'] > 0): ?>
-                                    <span style="background: linear-gradient(135deg, #ff006e, #8338ec); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-flex; align-items: center; gap: 3px;">
-                                        📝 Termo x<?= $sequencias_usuario[$jogador['id']]['termo'] ?>
-                                    </span>
-                                <?php endif; ?>
-                                <?php if(isset($sequencias_usuario[$jogador['id']]['memoria']) && $sequencias_usuario[$jogador['id']]['memoria'] > 0): ?>
-                                    <span style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-flex; align-items: center; gap: 3px;">
-                                        🧠 Memória x<?= $sequencias_usuario[$jogador['id']]['memoria'] ?>
-                                    </span>
-                                <?php endif; ?>
-                                <?php if($maior_cafe && $maior_cafe['id'] == $jogador['id'] && $maior_cafe['cafes_feitos'] > 0): ?>
-                                    <span style="background: linear-gradient(135deg, #8B4513, #D2691E); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-flex; align-items: center; gap: 3px;">
-                                        ☕ Café x<?= $maior_cafe['cafes_feitos'] ?>
-                                    </span>
-                                <?php endif; ?>
-                            </div>
                         </div>
                         <span class="ranking-value">
                             <?= number_format($jogador['lucro_liquido'], 0, ',', '.') ?> pts
