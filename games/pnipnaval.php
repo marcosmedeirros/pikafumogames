@@ -86,9 +86,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 foreach ($salas as $s) {
                     $valor = $s['valor_aposta'] ?? 10;
                     
-                    $btn = ($s['id_jog1'] == $user_id) 
-                        ? '<span class="badge bg-secondary bg-opacity-50 border border-secondary text-light"><i class="bi bi-hourglass-split me-1"></i>Aguardando</span>'
-                        : '<button onclick="entrarSala('.$s['id'].', '.$valor.')" class="btn btn-sm btn-success fw-bold shadow-sm px-3"><i class="bi bi-crosshair me-1"></i>COMBATER</button>';
+                    if ($s['id_jog1'] == $user_id) {
+                        // Quem criou a sala pode desistir e pegar de volta os pontos
+                        $btn = '<div class="d-flex gap-2">
+                            <span class="badge bg-secondary bg-opacity-50 border border-secondary text-light"><i class="bi bi-hourglass-split me-1"></i>Aguardando</span>
+                            <button onclick="desistirSala('.$s['id'].', '.$valor.')" class="btn btn-sm btn-outline-danger fw-bold"><i class="bi bi-flag-fill me-1"></i>Desistir</button>
+                        </div>';
+                    } else {
+                        // Outros podem entrar na sala
+                        $btn = '<button onclick="entrarSala('.$s['id'].', '.$valor.')" class="btn btn-sm btn-success fw-bold shadow-sm px-3"><i class="bi bi-crosshair me-1"></i>COMBATER</button>';
+                    }
                     
                     echo "<tr class='align-middle'>
                         <td class='ps-3'>
@@ -132,6 +139,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
             $pdo->commit();
             echo json_encode(['sucesso' => true, 'sala_id' => $sala_id]);
+            exit;
+        }
+
+        // B.5 DESISTIR DA SALA (REEMBOLSAR)
+        if ($acao == 'desistir_sala') {
+            $sala_id = (int)$_POST['sala_id'];
+            $valor = (int)$_POST['valor'];
+
+            $pdo->beginTransaction();
+
+            // Verifica se é o criador da sala
+            $stmtS = $pdo->prepare("SELECT * FROM naval_salas WHERE id = :id FOR UPDATE");
+            $stmtS->execute([':id' => $sala_id]);
+            $sala = $stmtS->fetch(PDO::FETCH_ASSOC);
+
+            if (!$sala) throw new Exception("Sala não existe.");
+            if ($sala['id_jog1'] != $user_id) throw new Exception("Você não criou esta sala.");
+            if ($sala['status'] != 'aguardando') throw new Exception("Sala não está mais disponível.");
+
+            // Reembolsa os pontos ao criador
+            $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :uid")
+                ->execute([':val' => $valor, ':uid' => $user_id]);
+
+            // Deleta a sala
+            $pdo->prepare("DELETE FROM naval_salas WHERE id = :id")->execute([':id' => $sala_id]);
+            $pdo->prepare("DELETE FROM naval_tabuleiros WHERE id_sala = :id")->execute([':id' => $sala_id]);
+
+            $pdo->commit();
+            echo json_encode(['sucesso' => true, 'mensagem' => 'Sala encerrada. Pontos reembolsados!']);
             exit;
         }
 
@@ -657,7 +693,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         pollInterval = setInterval(gameLoop, 2000);
     }
 
-    // --- GAME LOGIC ---
+    function desistirSala(salaId, valor) {
+        if(!confirm('Desistir da sala e recuperar '+valor+' pontos?')) return;
+        
+        const fd = new FormData(); 
+        fd.append('acao', 'desistir_sala'); 
+        fd.append('sala_id', salaId);
+        fd.append('valor', valor);
+        
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) alert('Erro: ' + d.erro);
+                else {
+                    alert(d.mensagem || 'Sala encerrada.');
+                    updateLobby(); // Atualiza o radar de batalhas
+                }
+            })
+            .catch(err => alert('Erro ao desistir: ' + err.message));
+    }    // --- GAME LOGIC ---
     function gameLoop() {
         if(!salaId) return;
         const fd = new FormData(); fd.append('acao', 'buscar_estado'); fd.append('sala_id', salaId);
