@@ -227,20 +227,20 @@ function renderizarAvatarSVG($customizacao, $size = 100) {
     } elseif ($elite === 'infinity_gauntlet') {
         $svg .= "<rect x=\"70\" y=\"70\" width=\"12\" height=\"12\" rx=\"2\" fill=\"#d97706\" stroke=\"#000\" stroke-width=\"2\"/>";
     }
-    // Hardware (emoji simples no topo)
+    // Hardware (emoji simples no topo, colado na cabeça)
     $hw = $customizacao['hardware'] ?? 'none';
     if ($hw === 'pixel_crown' || $hw === 'crown_mythic') {
-        $svg .= "<text x=\"50\" y=\"15\" text-anchor=\"middle\" font-size=\"16\">👑</text>";
+        $svg .= "<text x=\"50\" y=\"10\" text-anchor=\"middle\" font-size=\"18\">👑</text>";
     } elseif ($hw === 'antenna_dish') {
-        $svg .= "<text x=\"50\" y=\"15\" text-anchor=\"middle\" font-size=\"16\">📡</text>";
+        $svg .= "<text x=\"50\" y=\"10\" text-anchor=\"middle\" font-size=\"18\">📡</text>";
     } elseif ($hw === 'halo') {
-        $svg .= "<text x=\"50\" y=\"15\" text-anchor=\"middle\" font-size=\"16\">✨</text>";
+        $svg .= "<text x=\"50\" y=\"8\" text-anchor=\"middle\" font-size=\"18\">✨</text>";
     } elseif ($hw === 'robot_ears') {
-        $svg .= "<text x=\"50\" y=\"15\" text-anchor=\"middle\" font-size=\"16\">👂</text>";
+        $svg .= "<text x=\"50\" y=\"10\" text-anchor=\"middle\" font-size=\"18\">👂</text>";
     } elseif ($hw === 'spiky_hair') {
-        $svg .= "<text x=\"50\" y=\"15\" text-anchor=\"middle\" font-size=\"16\">⚡</text>";
+        $svg .= "<text x=\"50\" y=\"10\" text-anchor=\"middle\" font-size=\"18\">⚡</text>";
     } elseif ($hw === 'visor_tech') {
-        $svg .= "<text x=\"50\" y=\"15\" text-anchor=\"middle\" font-size=\"16\">🔍</text>";
+        $svg .= "<text x=\"50\" y=\"10\" text-anchor=\"middle\" font-size=\"18\">🔍</text>";
     }
     $svg .= "</svg>";
     return $svg;
@@ -356,12 +356,24 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
                 ':rar' => $raridade
             ]);
             @file_put_contents($logFile, "  Item inserido no inventário\n", FILE_APPEND | LOCK_EX);
+            $item_duplicado = false;
         } catch (PDOException $e) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
-            $erro = $e->getMessage();
-            @file_put_contents($logFile, "  ❌ Erro ao inserir item: $erro\n", FILE_APPEND | LOCK_EX);
-            error_log("Erro ao inserir item: $erro");
-            throw $e;
+            // Se der erro de duplicata (unique constraint), ganhar 10 moedas
+            if (strpos($e->getMessage(), 'Duplicate') !== false || strpos($e->getMessage(), 'UNIQUE') !== false) {
+                @file_put_contents($logFile, "  ⚠️ Item duplicado detectado! Adicionando 10 moedas bônus\n", FILE_APPEND | LOCK_EX);
+                $item_duplicado = true;
+                
+                // Adicionar 10 moedas pelo item duplicado
+                $stmtBonus = $pdo->prepare("UPDATE usuarios SET pontos = pontos + 10 WHERE id = :id");
+                $stmtBonus->execute([':id' => $user_id]);
+                @file_put_contents($logFile, "  ✨ +10 moedas adicionadas por item duplicado\n", FILE_APPEND | LOCK_EX);
+            } else {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                $erro = $e->getMessage();
+                @file_put_contents($logFile, "  ❌ Erro ao inserir item: $erro\n", FILE_APPEND | LOCK_EX);
+                error_log("Erro ao inserir item: $erro");
+                throw $e;
+            }
         }
 
         if ($pdo->inTransaction()) $pdo->commit();
@@ -377,12 +389,13 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
 
         return [
             'sucesso' => true,
-            'mensagem' => 'Item obtido!',
+            'mensagem' => $item_duplicado ? '🔄 Item duplicado! +10 moedas bônus!' : 'Item obtido!',
             'categoria' => $categoria_nome,
             'item_id' => $item_id,
             'item_nome' => $item['nome'],
             'raridade' => $raridade,
-            'pontos_restantes' => $pontos_finais
+            'pontos_restantes' => $pontos_finais,
+            'duplicado' => $item_duplicado ?? false
         ];
         
     } catch (PDOException $e) {
