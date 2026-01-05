@@ -26,6 +26,7 @@ try {
 $id_rei_xadrez = null;
 $id_rei_pinguim = null;
 $id_rei_flappy = null;
+$id_rei_pnip = null;
 
 try {
     // Rei do Xadrez: Quem tem mais vitórias
@@ -39,6 +40,10 @@ try {
     // Rei do Flappy: Quem tem o maior recorde (NOVO)
     $stmtFlappy = $pdo->query("SELECT id_usuario FROM flappy_historico ORDER BY pontuacao DESC LIMIT 1");
     $id_rei_flappy = $stmtFlappy->fetchColumn();
+
+    // Rei do PNIPNAVAL: Quem tem mais vitórias em Batalha Naval
+    $stmtPNIP = $pdo->query("SELECT vencedor_id FROM naval_salas WHERE status = 'fim' AND vencedor_id IS NOT NULL GROUP BY vencedor_id ORDER BY COUNT(*) DESC LIMIT 1");
+    $id_rei_pnip = $stmtPNIP->fetchColumn();
 
 } catch (Exception $e) {
     // Silencia erros caso as tabelas ainda não existam ou estejam vazias
@@ -167,6 +172,19 @@ try {
         
         .me-row { background-color: rgba(0, 230, 118, 0.1) !important; border: 1px solid #00e676; font-weight: bold; }
 
+        /* TAGS ESPECIAIS */
+        .tag-badge { 
+            font-size: 0.65em; 
+            padding: 4px 10px; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .tag-xadrez { background: linear-gradient(135deg, #9c27b0, #673ab7); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .tag-pinguim { background: linear-gradient(135deg, #00acc1, #0097a7); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .tag-flappy { background: linear-gradient(135deg, #ff9800, #f57c00); color: white; border: 1px solid rgba(255,255,255,0.2); }
+        .tag-pnip { background: linear-gradient(135deg, #0277bd, #01579b); color: white; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 2px 8px rgba(2, 119, 189, 0.4); }
+
         /* TAGS ESPECIAIS 🏷️ */
         .tag-badge { font-size: 0.65em; padding: 4px 8px; border-radius: 12px; vertical-align: middle; font-weight: 700; letter-spacing: 0.5px; }
         .tag-xadrez { background-color: #ffc107; color: #000; box-shadow: 0 0 5px rgba(255, 193, 7, 0.4); }
@@ -256,6 +274,10 @@ try {
 
                                         <?php if($user['id'] == $id_rei_flappy): ?>
                                             <span class="badge tag-badge tag-flappy ms-2" title="Mestre do Flappy (Maior Recorde)">🐦 FLY</span>
+                                        <?php endif; ?>
+
+                                        <?php if($user['id'] == $id_rei_pnip): ?>
+                                            <span class="badge tag-badge tag-pnip ms-2" title="Almirante da Batalha Naval (Mais vitórias)">🚢 PNIP</span>
                                         <?php endif; ?>
 
                                         <?php if($user['id'] == $user_id): ?>

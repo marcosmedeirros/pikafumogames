@@ -753,6 +753,14 @@ try {
         </div>
 
         <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/roleta.php" class="game-card" style="--accent: #d32f2f;">
+                <span class="game-icon">🎡</span>
+                <div class="game-title">Roleta</div>
+                <div class="game-subtitle">Cassino Europeu</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
             <a href="user/ranking.php" class="game-card" style="--accent: #ffc107;">
                 <span class="game-icon">🏆</span>
                 <div class="game-title">Ranking Geral</div>
@@ -777,15 +785,20 @@ try {
         </div>
 
         <div class="col-6 col-md-4 col-lg-3">
-            <a href="games/index.php?game=avatar" class="game-card" style="--accent: #9d4edd;">
+            <a href="games/avatar.php" class="game-card" style="--accent: #9d4edd;">
                 <span class="game-icon">🤖</span>
                 <div class="game-title">Avatar</div>
                 <div class="game-subtitle">Customizar seu avatar</div>
             </a>
         </div>
 
-        
-    </div>
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/pnipnaval.php" class="game-card" style="--accent: #00bcd4;">
+                <span class="game-icon">⚔️</span>
+                <div class="game-title">Pnip Naval</div>
+                <div class="game-subtitle">Desafio multiplayer</div>
+            </a>
+        </div>
 
     <!-- SEÇÃO: MINHAS STATS (CARDS NO TOPO) -->
     <h6 class="section-title"><i class="bi bi-person-circle"></i>Minhas Estatísticas</h6>
