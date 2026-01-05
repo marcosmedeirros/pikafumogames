@@ -459,37 +459,28 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
             const resultArea = document.getElementById('result-area');
             const container = document.getElementById('case-container');
             
-            modal.classList.remove('hidden'); 
-            resultArea.classList.add('hidden');
-            carousel.style.transition = 'none'; 
-            carousel.style.transform = 'translateX(0)';
+            modal.classList.remove('hidden'); resultArea.classList.add('hidden');
+            carousel.style.transition = 'none'; carousel.style.transform = 'translateX(0)';
             document.getElementById('case-title').innerText = `Abrindo ${tier.nome}...`;
 
             const allPossibleItems = [];
-            Object.keys(allItems).forEach(cat => { 
-                Object.keys(allItems[cat]).forEach(key => { 
-                    const item = allItems[cat][key]; 
-                    if(item.preco > 0) allPossibleItems.push({ ...item, id: key, category: cat }); 
-                }); 
-            });
+            Object.keys(allItems).forEach(cat => { Object.keys(allItems[cat]).forEach(key => { const item = allItems[cat][key]; if(item.preco > 0) allPossibleItems.push({ ...item, id: key, category: cat }); }); });
             const lotteryPool = [];
+            // Alinha probabilidades do front com o servidor (core/avatar.php -> $LOOT_BOXES)
             allPossibleItems.forEach(item => {
-                const r = item.rarity; 
-                let c = 0;
-                if(tierKey==='basica'){ if(r==='common') c=70; else if(r==='rare') c=25; else if(r==='epic') c=5; }
-                else if(tierKey==='top'){ if(r==='common') c=40; else if(r==='rare') c=40; else if(r==='epic') c=18; else if(r==='legendary') c=2; }
-                else if(tierKey==='premium'){ if(r==='common') c=15; else if(r==='rare') c=30; else if(r==='epic') c=35; else if(r==='legendary') c=18; else if(r==='mythic') c=2; }
+                const r = item.rarity; let c = 0;
+                if(tierKey==='basica'){
+                    if(r==='common') c=85; else if(r==='rare') c=14; else if(r==='epic') c=1;
+                } else if(tierKey==='top'){
+                    if(r==='common') c=50; else if(r==='rare') c=35; else if(r==='epic') c=13; else if(r==='legendary') c=2;
+                } else if(tierKey==='premium'){
+                    if(r==='common') c=20; else if(r==='rare') c=30; else if(r==='epic') c=30; else if(r==='legendary') c=18; else if(r==='mythic') c=2;
+                }
                 for(let i=0;i<c;i++) lotteryPool.push(item);
             });
 
             carousel.innerHTML = '';
-            for(let i=0;i<85;i++){ 
-                const rand = lotteryPool[Math.floor(Math.random()*lotteryPool.length)]; 
-                const div=document.createElement('div'); 
-                div.className='case-item border border-white/5'; 
-                div.innerHTML=getItemPreview(rand, rand.category, rand.id); 
-                carousel.appendChild(div); 
-            }
+            for(let i=0;i<85;i++){ const rand = lotteryPool[Math.floor(Math.random()*lotteryPool.length)]; const div=document.createElement('div'); div.className='case-item border border-white/5'; div.innerHTML=getItemPreview(rand, rand.category, rand.id); carousel.appendChild(div); }
 
             let winner = lotteryPool[Math.floor(Math.random()*lotteryPool.length)];
             try {
@@ -526,29 +517,22 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
                 return;
             }
 
-            const targetIndex = 75; 
-            carousel.children[targetIndex].innerHTML = getItemPreview(winner, winner.category, winner.id); 
-            carousel.children[targetIndex].classList.add('bg-white/5');
+            const targetIndex = 75; carousel.children[targetIndex].innerHTML = getItemPreview(winner, winner.category, winner.id); carousel.children[targetIndex].classList.add('bg-white/5');
             setTimeout(()=>{
-                const desired = (targetIndex * 128) - (window.innerWidth / 2 - 64);
-                carousel.style.transition = 'transform 7s cubic-bezier(0.1, 0, 0.1, 1)';
+                carousel.style.transition='transform 7s cubic-bezier(0.1, 0, 0.1, 1)';
+                const targetEl = carousel.children[targetIndex];
+                const parent = carousel.parentElement; // faixa visível
+                const targetCenter = targetEl.offsetLeft + (targetEl.offsetWidth/2);
+                const desired = Math.max(0, targetCenter - (parent.clientWidth/2));
                 carousel.style.transform = `translateX(-${desired}px)`;
             },50);
-            setTimeout(()=>{ 
-                const nameEl=document.getElementById('winner-name'); 
-                const tagEl=document.getElementById('winner-tag'); 
-                nameEl.innerText = (winner.nome||'---').toUpperCase(); 
-                nameEl.style.color = (winner.rarity==='legendary'||winner.rarity==='mythic') ? '#f59e0b':'#fff'; 
-                tagEl.innerText = `NOVO ${String(winner.rarity||'item').toUpperCase()} ENCONTRADO`; 
-                tagEl.className = 'text-[10px] font-black uppercase tracking-[0.4em] mb-4 text-indigo-400'; 
-                resultArea.classList.remove('hidden'); 
+            setTimeout(()=>{ const nameEl=document.getElementById('winner-name'); const tagEl=document.getElementById('winner-tag'); nameEl.innerText = (winner.nome||'---').toUpperCase(); nameEl.style.color = (winner.rarity==='legendary'||winner.rarity==='mythic') ? '#f59e0b':'#fff'; tagEl.innerText = `NOVO ${String(winner.rarity||'item').toUpperCase()} ENCONTRADO`; tagEl.className = 'text-[10px] font-black uppercase tracking-[0.4em] mb-4 text-indigo-400'; resultArea.classList.remove('hidden'); 
                 // Atualiza posse em memória para liberar botão Equipar sem recarregar
                 if(!OWNED_MAP[winner.category]) OWNED_MAP[winner.category] = {}; 
                 OWNED_MAP[winner.category][winner.id] = true; 
                 // Atualiza grid atual se estiver na mesma categoria
                 if(state.currentTab === winner.category) renderStore(state.currentTab);
             },7500);
-        }
         }
 
         function closeCaseModal(){ document.getElementById('case-modal').classList.add('hidden'); }
