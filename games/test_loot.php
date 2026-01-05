@@ -1,22 +1,16 @@
 <?php
 /**
- * TEST_LOOT_COMPLETE.PHP - Debug das Loot Boxes com Interface
+ * GAMES/TEST_LOOT.PHP - Debug das Loot Boxes com Interface
  */
 
 session_start();
 
-// Detectar diretório base para require correto
-$baseDir = __DIR__;
-if (basename($baseDir) === 'games') {
-    $baseDir = dirname($baseDir);
-}
+require '../core/conexao.php';
+require '../core/avatar.php';
 
-require $baseDir . '/core/conexao.php';
-require $baseDir . '/core/avatar.php';
-
-// Se não estiver logado, usa user_id padrão
 if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 1;
+    header("Location: ../auth/login.php");
+    exit;
 }
 
 $user_id = $_SESSION['user_id'];
@@ -162,12 +156,12 @@ $avatar = obterCustomizacaoAvatar($pdo, $user_id);
     <div class="section">
         <h2>📋 Log de Erros</h2>
         <?php
-        $logFile = __DIR__ . '/logs/loot_errors.log';
+        $logFile = __DIR__ . '/../logs/loot_boxes.log';
         if (file_exists($logFile)) {
             $lines = array_slice(explode("\n", file_get_contents($logFile)), -20);
             echo "<pre>" . htmlspecialchars(implode("\n", $lines)) . "</pre>";
         } else {
-            echo "<p><span class='warn'>⚠</span> Nenhum log de erro encontrado</p>";
+            echo "<p><span class='warn'>⚠</span> Nenhum log encontrado em: $logFile</p>";
         }
         ?>
     </div>
