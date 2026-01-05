@@ -28,10 +28,25 @@ try {
 
 // API para abrir caixa (AJAX)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['api']) && $_POST['api'] === 'abrir_caixa') {
-    header('Content-Type: application/json');
+    header('Content-Type: application/json; charset=utf-8');
+    
+    // Debug logging
+    error_log("=== ABRIR CAIXA DEBUG ===");
+    error_log("POST data: " . json_encode($_POST));
+    error_log("User ID: " . $user_id);
+    
     $tipo_caixa = $_POST['tipo_caixa'] ?? '';
+    error_log("Tipo caixa: " . $tipo_caixa);
+    
+    if (empty($tipo_caixa)) {
+        echo json_encode(['sucesso' => false, 'mensagem' => 'Tipo de caixa não especificado']);
+        exit;
+    }
+    
     $resultado = abrirLootBox($pdo, $user_id, $tipo_caixa);
-    echo json_encode($resultado);
+    error_log("Resultado: " . json_encode($resultado));
+    
+    echo json_encode($resultado, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -473,8 +488,18 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
         }
 
         async function openCaseModal(tierKey) {
+            console.log('🎁 Abrindo caixa:', tierKey);
+            
             const tier = caseTiers[tierKey];
-            if(state.balance < tier.preco) return alert("SALDO INSUFICIENTE.");
+            if(!tier) {
+                alert("Tipo de caixa inválido!");
+                return;
+            }
+            
+            if(state.balance < tier.preco) {
+                alert("SALDO INSUFICIENTE. Você tem " + state.balance + " pts, precisa de " + tier.preco + " pts.");
+                return;
+            }
 
             const modal = document.getElementById('case-modal');
             const carousel = document.getElementById('case-carousel');
@@ -483,21 +508,34 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
             
             // Proteção contra elementos null
             if (!modal || !carousel || !resultArea || !container) {
-                console.error('Modal elements not found:', { modal, carousel, resultArea, container });
+                console.error('❌ Modal elements not found:', { modal, carousel, resultArea, container });
                 alert('Erro ao carregar modal. Recarregue a página.');
                 return;
             }
             
-            modal.classList.remove('hidden'); resultArea.classList.add('hidden');
-            carousel.style.transition = 'none'; carousel.style.transform = 'translateX(0)';
+            modal.classList.remove('hidden'); 
+            resultArea.classList.add('hidden');
+            carousel.style.transition = 'none'; 
+            carousel.style.transform = 'translateX(0)';
             document.getElementById('case-title').innerText = `Abrindo ${tier.nome}...`;
 
             const allPossibleItems = [];
-            Object.keys(allItems).forEach(cat => { Object.keys(allItems[cat]).forEach(key => { const item = allItems[cat][key]; if(item.preco > 0) allPossibleItems.push({ ...item, id: key, category: cat }); }); });
+            Object.keys(allItems).forEach(cat => { 
+                Object.keys(allItems[cat]).forEach(key => { 
+                    const item = allItems[cat][key]; 
+                    if(item.preco > 0 && key !== 'default' && key !== 'none') {
+                        allPossibleItems.push({ ...item, id: key, category: cat }); 
+                    }
+                }); 
+            });
+            
+            console.log('📦 Itens possíveis:', allPossibleItems.length);
+            
             const lotteryPool = [];
             // Alinha probabilidades do front com o servidor (core/avatar.php -> $LOOT_BOXES)
             allPossibleItems.forEach(item => {
-                const r = item.rarity; let c = 0;
+                const r = item.rarity; 
+                let c = 0;
                 if(tierKey==='basica'){
                     if(r==='common') c=85; else if(r==='rare') c=14; else if(r==='epic') c=1;
                 } else if(tierKey==='top'){
@@ -508,45 +546,90 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
                 for(let i=0;i<c;i++) lotteryPool.push(item);
             });
 
+            console.log('🎲 Pool de sorteio:', lotteryPool.length);
+
             carousel.innerHTML = '';
-            for(let i=0;i<85;i++){ const rand = lotteryPool[Math.floor(Math.random()*lotteryPool.length)]; const div=document.createElement('div'); div.className='case-item border border-white/5'; div.innerHTML=getItemPreview(rand, rand.category, rand.id); carousel.appendChild(div); }
+            for(let i=0;i<85;i++){ 
+                const rand = lotteryPool[Math.floor(Math.random()*lotteryPool.length)]; 
+                const div=document.createElement('div'); 
+                div.className='case-item border border-white/5'; 
+                div.innerHTML=getItemPreview(rand, rand.category, rand.id); 
+                carousel.appendChild(div); 
+            }
 
             let winner = lotteryPool[Math.floor(Math.random()*lotteryPool.length)];
+            console.log('🏆 Vencedor visual (antes da API):', winner);
+            
             try {
+                console.log('📡 Enviando requisição para servidor...');
                 const fd = new FormData();
                 fd.append('api', 'abrir_caixa');
                 fd.append('tipo_caixa', tierKey);
-                const resp = await fetch(window.location.href, { method: 'POST', body: fd });
-                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                const data = await resp.json();
-                console.log('Resposta da caixa:', data);
-                if(data && data.sucesso){
-                    state.balance = data.pontos_restantes; 
-                    updateBalance();
-                    const cat = data.categoria; 
-                    const key = data.item_id;
-                    if(allItems[cat] && allItems[cat][key]){
-                        winner = { ...allItems[cat][key], id:key, category:cat };
-                    }
+                
+                console.log('Enviando:', {api: 'abrir_caixa', tipo_caixa: tierKey});
+                
+                const resp = await fetch(window.location.href, { 
+                    method: 'POST', 
+                    body: fd 
+                });
+                
+                console.log('✅ Resposta HTTP:', resp.status, resp.statusText);
+                
+                if (!resp.ok) {
+                    throw new Error(`HTTP ${resp.status}`);
                 }
-                else if(data && data.erro){ 
-                    alert('Erro: ' + data.erro); 
+                
+                const text = await resp.text();
+                console.log('📄 Resposta bruta:', text);
+                
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch(e) {
+                    console.error('❌ Erro ao parsear JSON:', e, 'Texto:', text);
+                    alert('Erro ao processar resposta do servidor');
                     modal.classList.add('hidden');
                     return;
                 }
+                
+                console.log('🔄 Dados processados:', data);
+                
+                if(data && data.sucesso){
+                    console.log('✅ Caixa aberta com sucesso!');
+                    state.balance = parseInt(data.pontos_restantes) || 0; 
+                    updateBalance();
+                    const cat = data.categoria; 
+                    const key = data.item_id;
+                    console.log('Item obtido:', {categoria: cat, id: key, nome: data.item_nome});
+                    
+                    if(allItems[cat] && allItems[cat][key]){
+                        winner = { ...allItems[cat][key], id:key, category:cat };
+                        console.log('🏆 Vencedor atualizado:', winner);
+                    }
+                }
                 else if(data && data.mensagem){ 
+                    console.warn('⚠️ Aviso:', data.mensagem);
                     alert(data.mensagem); 
                     modal.classList.add('hidden');
                     return;
                 }
+                else {
+                    console.error('❌ Resposta inválida:', data);
+                    alert('Erro desconhecido ao abrir caixa'); 
+                    modal.classList.add('hidden');
+                    return;
+                }
             } catch(e){ 
-                console.error('Falha ao abrir caixa via API', e); 
+                console.error('❌ Exceção ao chamar API:', e); 
                 alert('Erro ao abrir caixa: ' + e.message);
                 modal.classList.add('hidden');
                 return;
             }
 
-            const targetIndex = 75; carousel.children[targetIndex].innerHTML = getItemPreview(winner, winner.category, winner.id); carousel.children[targetIndex].classList.add('bg-white/5');
+            const targetIndex = 75; 
+            carousel.children[targetIndex].innerHTML = getItemPreview(winner, winner.category, winner.id); 
+            carousel.children[targetIndex].classList.add('bg-white/5');
+            
             setTimeout(()=>{
                 carousel.style.transition='transform 7s cubic-bezier(0.1, 0, 0.1, 1)';
                 const targetEl = carousel.children[targetIndex];
@@ -555,12 +638,30 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
                 const desired = Math.max(0, targetCenter - (parent.clientWidth/2));
                 carousel.style.transform = `translateX(-${desired}px)`;
             },50);
-            setTimeout(()=>{ const nameEl=document.getElementById('winner-name'); const tagEl=document.getElementById('winner-tag'); nameEl.innerText = (winner.nome||'---').toUpperCase(); nameEl.style.color = (winner.rarity==='legendary'||winner.rarity==='mythic') ? '#f59e0b':'#fff'; tagEl.innerText = `NOVO ${String(winner.rarity||'item').toUpperCase()} ENCONTRADO`; tagEl.className = 'text-[10px] font-black uppercase tracking-[0.4em] mb-4 text-indigo-400'; resultArea.classList.remove('hidden'); 
+            
+            setTimeout(()=>{ 
+                const nameEl=document.getElementById('winner-name'); 
+                const tagEl=document.getElementById('winner-tag'); 
+                
+                if(!nameEl || !tagEl) {
+                    console.error('❌ Elementos do resultado não encontrados');
+                    return;
+                }
+                
+                nameEl.innerText = (winner.nome||'---').toUpperCase(); 
+                nameEl.style.color = (winner.rarity==='legendary'||winner.rarity==='mythic') ? '#f59e0b':'#fff'; 
+                tagEl.innerText = `NOVO ${String(winner.rarity||'item').toUpperCase()} ENCONTRADO`; 
+                tagEl.className = 'text-[10px] font-black uppercase tracking-[0.4em] mb-4 text-indigo-400'; 
+                resultArea.classList.remove('hidden'); 
+                
                 // Atualiza posse em memória para liberar botão Equipar sem recarregar
                 if(!OWNED_MAP[winner.category]) OWNED_MAP[winner.category] = {}; 
                 OWNED_MAP[winner.category][winner.id] = true; 
+                
                 // Atualiza grid atual se estiver na mesma categoria
                 if(state.currentTab === winner.category) renderStore(state.currentTab);
+                
+                console.log('🎉 Resultado exibido!');
             },7500);
         }
 
