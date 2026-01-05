@@ -239,6 +239,12 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
             currentTab: 'colors'
         };
 
+        console.log('=== DEBUG AVATAR ===');
+        console.log('OWNED_MAP:', OWNED_MAP);
+        console.log('allItems keys:', Object.keys(allItems));
+        console.log('userBalance:', userBalance);
+        console.log('equippedServer:', equippedServer);
+
         function hardwareSVG(id, size=44){
             const w=size, h=size;
             switch(id){
