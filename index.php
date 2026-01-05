@@ -12,6 +12,7 @@
 
 session_start();
 require 'core/conexao.php';
+require 'core/avatar.php';
 
 // Segurança
 if (!isset($_SESSION['user_id'])) {
@@ -336,13 +337,28 @@ try {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
+            padding: 12px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             font-size: 0.95rem;
+            gap: 10px;
         }
 
         .ranking-item:last-child {
             border-bottom: none;
+        }
+
+        .ranking-avatar {
+            flex-shrink: 0;
+            width: 48px;
+            height: 67px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ranking-avatar svg {
+            width: 100%;
+            height: 100%;
         }
 
         .ranking-position {
@@ -812,10 +828,12 @@ try {
                 <?php foreach($top_5_ranking as $idx => $jogador): ?>
                     <div class="ranking-item medal-<?= $idx+1 ?>">
                         <span class="ranking-position" aria-label="Posição <?= $idx+1 ?>"></span>
-                        <?php 
-                            $avatar_jogador = obterCustomizacaoAvatar($pdo, $jogador['id']);
-                            echo avatarHTML($avatar_jogador, 'mini');
-                        ?>
+                        <div class="ranking-avatar">
+                            <?php 
+                                $avatar_jogador = obterCustomizacaoAvatar($pdo, $jogador['id']);
+                                echo renderizarAvatarSVG($avatar_jogador, 32);
+                            ?>
+                        </div>
                         <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
                         <span class="ranking-value">
                             <?= number_format($jogador['lucro_liquido'], 0, ',', '.') ?> pts
@@ -836,14 +854,15 @@ try {
                 <?php foreach($top_5_cafes as $idx => $jogador): ?>
                     <div class="ranking-item medal-<?= $idx+1 ?>">
                         <span class="ranking-position" aria-label="Posição <?= $idx+1 ?>"></span>
-                        <?php 
-                            $avatar_jogador = obterCustomizacaoAvatar($pdo, $jogador['id']);
-                            echo avatarHTML($avatar_jogador, 'mini');
-                        ?>
+                        <div class="ranking-avatar">
+                            <?php 
+                                $avatar_jogador = obterCustomizacaoAvatar($pdo, $jogador['id']);
+                                echo renderizarAvatarSVG($avatar_jogador, 32);
+                            ?>
+                        </div>
                         <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
                         <span class="ranking-value">
                             <i class="bi bi-cup-hot"></i> <?= $jogador['cafes_feitos'] ?>
-                        </span>
                         </span>
                     </div>
                 <?php endforeach; ?>
