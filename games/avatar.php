@@ -191,7 +191,6 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
                     <button onclick="renderStore('clothing')" class="flex-1 min-w-[110px] py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition" id="tab-clothing">Roupas</button>
                     <button onclick="renderStore('footwear')" class="flex-1 min-w-[110px] py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition" id="tab-footwear">Sapatos</button>
                     <button onclick="renderStore('elite')" class="flex-1 min-w-[110px] py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition" id="tab-elite">Elite</button>
-                    <button onclick="renderStore('aura')" class="flex-1 min-w-[110px] py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition" id="tab-aura">Aura</button>
                 </div>
 
                 <!-- Grid -->
@@ -412,10 +411,7 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
             document.getElementById('layer-hat').innerHTML = hardwareSVG(hatKey, 64);
 
             const fxLayer = document.getElementById('layer-fx');
-            const fxCircle = fxLayer.firstElementChild;
-            fxCircle.className = "w-80 h-80 rounded-full blur-[110px]";
-            if(aura.color === 'transparent') fxLayer.style.opacity = '0';
-            else { fxLayer.style.opacity = '1'; fxCircle.style.backgroundColor = aura.color + '66'; fxCircle.classList.add('animate-aura'); }
+            fxLayer.style.opacity = '0';
 
             const clothesLayer = document.getElementById('layer-clothes');
             clothesLayer.innerHTML = '';

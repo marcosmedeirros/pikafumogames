@@ -77,16 +77,7 @@
     }
 }
 
-@keyframes pulse-aura {
-    0%, 100% {
-        r: 60px;
-        opacity: 0.3;
-    }
-    50% {
-        r: 75px;
-        opacity: 0.1;
-    }
-}
+
 
 @keyframes float-elite {
     0%, 100% {

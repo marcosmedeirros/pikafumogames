@@ -189,9 +189,6 @@ function renderizarAvatarSVG($customizacao, $size = 100) {
     $height = $size * 1.4;
     $svg = "<svg viewBox=\"0 0 100 120\" width=\"{$size}\" height=\"{$height}\" xmlns=\"http://www.w3.org/2000/svg\">";
     $svg .= "<defs><linearGradient id=\"heroGrad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" style=\"stop-color:rgba(255,255,255,0.15);stop-opacity:1\" /><stop offset=\"100%\" style=\"stop-color:rgba(0,0,0,0.3);stop-opacity:1\" /></linearGradient></defs>";
-    if ($customizacao['aura'] !== 'none') {
-        $svg .= "<circle cx=\"50\" cy=\"50\" r=\"50\" fill=\"{$aura_color}\" opacity=\"0.2\"/>";
-    }
     $svg .= "<ellipse cx=\"50\" cy=\"115\" rx=\"35\" ry=\"8\" fill=\"black\" opacity=\"0.3\" />";
     $svg .= "<rect x=\"20\" y=\"20\" width=\"60\" height=\"85\" rx=\"12\" fill=\"{$primary}\" stroke=\"#000\" stroke-width=\"4\"/>";
     $svg .= "<rect x=\"20\" y=\"20\" width=\"60\" height=\"85\" rx=\"12\" fill=\"url(#heroGrad)\"/>";
@@ -286,10 +283,11 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
             return ['sucesso' => false, 'mensagem' => 'Pontos insuficientes'];
         }
         
-        // Gerar raridade e escolher item compatível entre TODAS categorias
+        // Gerar raridade e escolher item compatível entre TODAS categorias (exceto aura)
         $raridade = gerarRaridadeAleatoria($caixa);
         $candidatos = [];
         foreach ($AVATAR_COMPONENTES as $catNome => $lista) {
+            if ($catNome === 'aura') continue; // Ignorar aura nas caixas
             foreach ($lista as $id => $item) {
                 if (($item['rarity'] ?? '') === $raridade && ($item['preco'] ?? 0) > 0) {
                     $candidatos[] = ['categoria' => $catNome, 'id' => $id, 'item' => $item];

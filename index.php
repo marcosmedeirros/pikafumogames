@@ -769,6 +769,14 @@ try {
         </div>
 
         <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/blackjack.php" class="game-card" style="--accent: #d32f2f;">
+                <span class="game-icon">🃏</span>
+                <div class="game-title">Blackjack</div>
+                <div class="game-subtitle">Chegue a 21</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
             <a href="games/index.php?game=avatar" class="game-card" style="--accent: #9d4edd;">
                 <span class="game-icon">🤖</span>
                 <div class="game-title">Avatar</div>
