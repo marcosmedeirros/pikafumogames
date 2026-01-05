@@ -189,7 +189,7 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
                         </g>
                         <g id="svg-elite" class="animate-weapon"></g>
                     </svg>
-                    <div id="layer-hat" class="layer flex justify-center text-7xl -top-14 pointer-events-none drop-shadow-2xl"></div>
+                    <div id="layer-hat" class="layer flex justify-center text-7xl -top-6 pointer-events-none drop-shadow-2xl"></div>
                 </div>
                 
                 <div class="mt-6 text-center w-full">
