@@ -219,6 +219,15 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
     </div>
 
     <script>
+        // Global error handler para debugar problemas
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('❌ GLOBAL ERROR:', {msg, url, lineNo, columnNo, error: error?.stack});
+            return false;
+        };
+        window.addEventListener('error', (e) => {
+            console.error('❌ ERROR EVENT:', e.error?.stack || e);
+        });
+        
         // Dados do servidor
         const allItems = <?= $componentes_json ?>;
         const caseTiers = <?= $loot_boxes_json ?>;
