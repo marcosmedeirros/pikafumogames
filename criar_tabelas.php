@@ -51,6 +51,18 @@ $tabelas = [
             INDEX idx_user (user_id),
             INDEX idx_raridade (raridade)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ",
+    'usuario_sequencias_dias' => "
+        CREATE TABLE IF NOT EXISTS usuario_sequencias_dias (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL UNIQUE,
+            jogo VARCHAR(50) NOT NULL,
+            sequencia_atual INT DEFAULT 0,
+            ultima_jogada DATE,
+            data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+            INDEX idx_jogo (jogo)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     "
 ];
 
