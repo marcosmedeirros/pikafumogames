@@ -240,10 +240,17 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
         };
 
         console.log('=== DEBUG AVATAR ===');
+        console.log('DOM Ready:', document.readyState);
+        console.log('Modal element exists:', !!document.getElementById('case-modal'));
         console.log('OWNED_MAP:', OWNED_MAP);
         console.log('allItems keys:', Object.keys(allItems));
         console.log('userBalance:', userBalance);
         console.log('equippedServer:', equippedServer);
+        
+        // Se modal não existe, log de erro imediato
+        if(!document.getElementById('case-modal')) {
+            console.error('CRÍTICO: Element case-modal não encontrado no DOM!');
+        }
 
         function hardwareSVG(id, size=44){
             const w=size, h=size;
@@ -465,6 +472,13 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
             const resultArea = document.getElementById('result-area');
             const container = document.getElementById('case-container');
             
+            // Proteção contra elementos null
+            if (!modal || !carousel || !resultArea || !container) {
+                console.error('Modal elements not found:', { modal, carousel, resultArea, container });
+                alert('Erro ao carregar modal. Recarregue a página.');
+                return;
+            }
+            
             modal.classList.remove('hidden'); resultArea.classList.add('hidden');
             carousel.style.transition = 'none'; carousel.style.transform = 'translateX(0)';
             document.getElementById('case-title').innerText = `Abrindo ${tier.nome}...`;
@@ -541,7 +555,10 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
             },7500);
         }
 
-        function closeCaseModal(){ document.getElementById('case-modal').classList.add('hidden'); }
+        function closeCaseModal(){ 
+            const modal = document.getElementById('case-modal');
+            if(modal) modal.classList.add('hidden');
+        }
         function updateBalance(){ document.getElementById('balance-display').innerText = `${state.balance.toLocaleString()} pts`; }
         renderStore('colors'); updateAvatar();
     </script>
