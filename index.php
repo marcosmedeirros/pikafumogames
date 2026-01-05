@@ -84,6 +84,37 @@ try {
     $sequencias_usuario = [];
 }
 
+// 4.5. Obter maiores sequências de Termo e Memória para os cards
+$maior_sequencia_termo = null;
+$maior_sequencia_memoria = null;
+
+try {
+    // Maior sequência de Termo
+    $stmt = $pdo->query("
+        SELECT u.id, u.nome, usd.sequencia_atual 
+        FROM usuario_sequencias_dias usd
+        JOIN usuarios u ON usd.user_id = u.id
+        WHERE usd.jogo = 'termo' 
+        ORDER BY usd.sequencia_atual DESC 
+        LIMIT 1
+    ");
+    $maior_sequencia_termo = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Maior sequência de Memória
+    $stmt = $pdo->query("
+        SELECT u.id, u.nome, usd.sequencia_atual 
+        FROM usuario_sequencias_dias usd
+        JOIN usuarios u ON usd.user_id = u.id
+        WHERE usd.jogo = 'memoria' 
+        ORDER BY usd.sequencia_atual DESC 
+        LIMIT 1
+    ");
+    $maior_sequencia_memoria = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $maior_sequencia_termo = null;
+    $maior_sequencia_memoria = null;
+}
+
 // 5. Obter usuário com mais cafés feitos
 $maior_cafe = null;
 
@@ -918,11 +949,6 @@ try {
                                         🧠 Memória x<?= $sequencias_usuario[$jogador['id']]['memoria'] ?>
                                     </span>
                                 <?php endif; ?>
-                                <?php if($maior_cafe && $maior_cafe['id'] == $jogador['id'] && $maior_cafe['cafes_feitos'] > 0): ?>
-                                    <span style="background: linear-gradient(135deg, #8B4513, #D2691E); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; display: inline-flex; align-items: center; gap: 3px;">
-                                        ☕ Café x<?= $maior_cafe['cafes_feitos'] ?>
-                                    </span>
-                                <?php endif; ?>
                             </div>
                         </div>
                         <span class="ranking-value">
@@ -956,6 +982,81 @@ try {
                         </span>
                     </div>
                 <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+
+        <!-- CARD MAIOR CAFÉ -->
+        <div class="ranking-card">
+            <div class="ranking-title"><i class="bi bi-cup-hot-fill me-2"></i>Maior Café</div>
+            <?php if($maior_cafe): ?>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 20px 0;">
+                    <div class="ranking-avatar" style="width: 80px; height: 112px;">
+                        <?php 
+                            $avatar_cafe = obterCustomizacaoAvatar($pdo, $maior_cafe['id']);
+                            echo renderizarAvatarSVG($avatar_cafe, 80);
+                        ?>
+                    </div>
+                    <span style="font-weight: 700; font-size: 1.1rem; text-align: center;">
+                        <?= htmlspecialchars($maior_cafe['nome']) ?>
+                    </span>
+                    <span style="background: linear-gradient(135deg, #8B4513, #D2691E); color: white; padding: 8px 16px; border-radius: 12px; font-size: 1rem; font-weight: bold; text-align: center;">
+                        ☕ <?= $maior_cafe['cafes_feitos'] ?> cafés
+                    </span>
+                </div>
+            <?php else: ?>
+                <div class="text-center py-3">
+                    <small class="text-secondary">Sem dados ainda</small>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- CARD MAIOR TERMO -->
+        <div class="ranking-card">
+            <div class="ranking-title"><i class="bi bi-lightning-fill me-2"></i>Maior Termo</div>
+            <?php if($maior_sequencia_termo): ?>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 20px 0;">
+                    <div class="ranking-avatar" style="width: 80px; height: 112px;">
+                        <?php 
+                            $avatar_termo = obterCustomizacaoAvatar($pdo, $maior_sequencia_termo['id']);
+                            echo renderizarAvatarSVG($avatar_termo, 80);
+                        ?>
+                    </div>
+                    <span style="font-weight: 700; font-size: 1.1rem; text-align: center;">
+                        <?= htmlspecialchars($maior_sequencia_termo['nome']) ?>
+                    </span>
+                    <span style="background: linear-gradient(135deg, #ff006e, #8338ec); color: white; padding: 8px 16px; border-radius: 12px; font-size: 1rem; font-weight: bold; text-align: center;">
+                        📝 Sequência x<?= $maior_sequencia_termo['sequencia_atual'] ?>
+                    </span>
+                </div>
+            <?php else: ?>
+                <div class="text-center py-3">
+                    <small class="text-secondary">Sem dados ainda</small>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- CARD MAIOR MEMÓRIA -->
+        <div class="ranking-card">
+            <div class="ranking-title"><i class="bi bi-brain me-2"></i>Maior Memória</div>
+            <?php if($maior_sequencia_memoria): ?>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 20px 0;">
+                    <div class="ranking-avatar" style="width: 80px; height: 112px;">
+                        <?php 
+                            $avatar_memoria = obterCustomizacaoAvatar($pdo, $maior_sequencia_memoria['id']);
+                            echo renderizarAvatarSVG($avatar_memoria, 80);
+                        ?>
+                    </div>
+                    <span style="font-weight: 700; font-size: 1.1rem; text-align: center;">
+                        <?= htmlspecialchars($maior_sequencia_memoria['nome']) ?>
+                    </span>
+                    <span style="background: linear-gradient(135deg, #00d4ff, #0099cc); color: white; padding: 8px 16px; border-radius: 12px; font-size: 1rem; font-weight: bold; text-align: center;">
+                        🧠 Sequência x<?= $maior_sequencia_memoria['sequencia_atual'] ?>
+                    </span>
+                </div>
+            <?php else: ?>
+                <div class="text-center py-3">
+                    <small class="text-secondary">Sem dados ainda</small>
+                </div>
             <?php endif; ?>
         </div>
     </div>
