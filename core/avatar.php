@@ -314,9 +314,9 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
                     return ['sucesso' => false, 'mensagem' => 'Pontos insuficientes ou erro ao debitar pontos'];
                 }
 
-                // Inserir item no inventário. Use ON DUPLICATE KEY UPDATE para evitar erro se já houver registro
+                // Inserir item no inventário. Usar INSERT simples (sem ON DUPLICATE) para compatibilidade
                 $stmt = $pdo->prepare(
-                    "INSERT INTO usuario_inventario (user_id, categoria, item_id, nome_item, raridade, data_obtencao)\n                 VALUES (:uid, :cat, :iid, :nome, :rar, NOW())\n                 ON DUPLICATE KEY UPDATE nome_item = VALUES(nome_item), raridade = VALUES(raridade), data_obtencao = NOW()"
+                    "INSERT INTO usuario_inventario (user_id, categoria, item_id, nome_item, raridade, data_obtencao) VALUES (:uid, :cat, :iid, :nome, :rar, NOW())"
                 );
 
                 $stmt->execute([
@@ -344,7 +344,18 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
                     'pontos_restantes' => $usuarioAtual ? $usuarioAtual['pontos'] : null
                 ];
             } catch (PDOException $e) {
+                // Log error to file for debugging
+                try {
+                    $logDir = __DIR__ . '/../logs';
+                    if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+                    $msg = date('Y-m-d H:i:s') . " - abrirLootBox error: " . $e->getMessage() . " (user_id={$user_id}, caixa={$tipo_caixa})\n";
+                    @file_put_contents($logDir . '/loot_errors.log', $msg, FILE_APPEND | LOCK_EX);
+                } catch (Exception $inner) {
+                    // ignore logging errors
+                }
+
                 if ($pdo->inTransaction()) $pdo->rollBack();
+                // Return a generic message; more details are in the log file
                 return ['sucesso' => false, 'mensagem' => 'Erro ao abrir caixa'];
             }
         

@@ -537,11 +537,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         <div id="setup-phase" class="text-center">
             <p class="text-secondary mb-3">Posicione sua frota estrategicamente.</p>
             <div class="ship-selector">
-                <div class="ship-btn active" onclick="selectShip(5)">Porta-Aviões (5)</div>
-                <div class="ship-btn" onclick="selectShip(4)">Encouraçado (4)</div>
-                <div class="ship-btn" onclick="selectShip(3)">Submarino (3)</div>
-                <div class="ship-btn" onclick="selectShip(3)">Cruzador (3)</div>
-                <div class="ship-btn" onclick="selectShip(2)">Destróier (2)</div>
+                <div id="ship-carrier" class="ship-btn active" onclick="selectShip('carrier',5)">Porta-Aviões (5)</div>
+                <div id="ship-battleship" class="ship-btn" onclick="selectShip('battleship',4)">Encouraçado (4)</div>
+                <div id="ship-submarine" class="ship-btn" onclick="selectShip('submarine',3)">Submarino (3)</div>
+                <div id="ship-cruiser" class="ship-btn" onclick="selectShip('cruiser',3)">Cruzador (3)</div>
+                <div id="ship-destroyer" class="ship-btn" onclick="selectShip('destroyer',2)">Destróier (2)</div>
             </div>
             <button class="btn btn-outline-info btn-sm mb-3 rounded-pill px-3" onclick="rotateShip()"><i class="bi bi-arrow-repeat me-1"></i> Girar (R)</button>
             
@@ -588,9 +588,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     
     // Setup Vars
     let placedShips = []; 
+    // ships: track by id so each type can only be placed once
+    let shipSelectedId = 'carrier';
     let currentShipSize = 5;
     let isVertical = false;
     let shipsPlacedCount = 0;
+    const availableShips = {
+        carrier: { size: 5, placed: false, btnId: 'ship-carrier' },
+        battleship: { size: 4, placed: false, btnId: 'ship-battleship' },
+        submarine: { size: 3, placed: false, btnId: 'ship-submarine' },
+        cruiser: { size: 3, placed: false, btnId: 'ship-cruiser' },
+        destroyer: { size: 2, placed: false, btnId: 'ship-destroyer' }
+    };
 
     // --- LOBBY LOGIC ---
     function updateLobby() {
@@ -690,7 +699,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
     }
 
-    function selectShip(size) { currentShipSize = size; }
+    function selectShip(id, size) {
+        // If already placed, prevent re-selection
+        if (availableShips[id] && availableShips[id].placed) {
+            alert('Este navio já foi posicionado.');
+            return;
+        }
+        shipSelectedId = id;
+        currentShipSize = size;
+        // visual active toggle
+        document.querySelectorAll('.ship-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(availableShips[id].btnId);
+        if (btn) btn.classList.add('active');
+    }
     function rotateShip() { isVertical = !isVertical; }
 
     function previewShip(tx, ty) {
@@ -707,16 +728,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     }
 
     function placeShip(tx, ty) {
+        // Prevent placing more than 5 ships
+        if (shipsPlacedCount >= 5) { alert('Você já posicionou o número máximo de 5 frotas.'); return; }
+
+        // Prevent placing the same ship twice
+        if (!availableShips[shipSelectedId]) { alert('Selecione um navio válido.'); return; }
+        if (availableShips[shipSelectedId].placed) { alert('Este navio já foi posicionado.'); return; }
+
         let cells = getShipCells(tx, ty, currentShipSize, isVertical);
         if(!isValidPlacement(cells)) return;
-        
-        placedShips.push(...cells);
+
+        // store ship as group (object with id and cells)
+        placedShips.push({ id: shipSelectedId, cells: cells });
         shipsPlacedCount++;
-        
+        availableShips[shipSelectedId].placed = true;
+
         cells.forEach(c => {
             let el = document.querySelector(`#setup-grid .cell[data-x="${c.x}"][data-y="${c.y}"]`);
             if(el) el.className = 'cell ship';
         });
+
+        // disable button visually
+        const btn = document.getElementById(availableShips[shipSelectedId].btnId);
+        if (btn) btn.classList.add('disabled');
 
         if(shipsPlacedCount >= 5) {
             document.getElementById('btn-confirm').disabled = false;
@@ -737,15 +771,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
     function resetSetup() {
         placedShips = []; shipsPlacedCount = 0;
+        // reset available ships
+        for (let k in availableShips) { availableShips[k].placed = false; const b = document.getElementById(availableShips[k].btnId); if (b) b.classList.remove('disabled'); }
+        // reset active to carrier
+        selectShip('carrier', availableShips['carrier'].size);
         initSetupGrid();
         document.getElementById('btn-confirm').disabled = true;
     }
 
     function confirmarNavios() {
+        if (shipsPlacedCount < 5) { alert('Posicione todas as 5 frotas antes de confirmar.'); return; }
+
+        // convert placedShips (groups) to a flat list of cells to store
+        let flatCells = [];
+        placedShips.forEach(s => { s.cells.forEach(c => flatCells.push(c)); });
+
         const fd = new FormData();
         fd.append('acao', 'confirmar_navios');
         fd.append('sala_id', salaId);
-        fd.append('navios', JSON.stringify(placedShips)); 
+        fd.append('navios', JSON.stringify(flatCells)); 
         fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
             document.getElementById('setup-phase').innerHTML = "<h3 class='text-info animate__animated animate__pulse animate__infinite'>Frota Confirmada! Aguardando oponente...</h3>";
         });
