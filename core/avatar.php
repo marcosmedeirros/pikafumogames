@@ -273,8 +273,8 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
     
     $caixa = $LOOT_BOXES[$tipo_caixa];
     
-    // Verificar saldo
     try {
+        // Verificar saldo
         $stmt = $pdo->prepare("SELECT pontos FROM usuarios WHERE id = :id");
         $stmt->execute([':id' => $user_id]);
         $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -283,11 +283,12 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
             return ['sucesso' => false, 'mensagem' => 'Pontos insuficientes'];
         }
         
-        // Gerar raridade e escolher item compatível entre TODAS categorias (exceto aura)
+        // Gerar raridade e escolher item compatível entre TODAS categorias (EXCETO aura)
         $raridade = gerarRaridadeAleatoria($caixa);
         $candidatos = [];
         foreach ($AVATAR_COMPONENTES as $catNome => $lista) {
-            if ($catNome === 'aura') continue; // Ignorar aura nas caixas
+            if ($catNome === 'aura') continue; // Ignorar completamente aura nas caixas
+            if ($catNome === 'colors' && $catNome === 'default') continue; // Ignorar cor default
             foreach ($lista as $id => $item) {
                 if (($item['rarity'] ?? '') === $raridade && ($item['preco'] ?? 0) > 0) {
                     $candidatos[] = ['categoria' => $catNome, 'id' => $id, 'item' => $item];
@@ -302,64 +303,58 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
         $item_id = $picked['id'];
         $item = $picked['item'];
         
-            // Use transação para garantir atomicidade: descontar pontos + registrar item
-            try {
-                if (!$pdo->inTransaction()) $pdo->beginTransaction();
+        // Iniciar transação
+        if (!$pdo->inTransaction()) $pdo->beginTransaction();
 
-                // Descontar pontos apenas se o usuário ainda tiver saldo suficiente (proteção contra concorrência)
-                $stmt = $pdo->prepare("UPDATE usuarios SET pontos = pontos - :preco WHERE id = :id AND pontos >= :preco");
-                $stmt->execute([':preco' => $caixa['preco'], ':id' => $user_id]);
-                if ($stmt->rowCount() === 0) {
-                    if ($pdo->inTransaction()) $pdo->rollBack();
-                    return ['sucesso' => false, 'mensagem' => 'Pontos insuficientes ou erro ao debitar pontos'];
-                }
+        // Descontar pontos apenas se o usuário ainda tiver saldo suficiente
+        $stmt = $pdo->prepare("UPDATE usuarios SET pontos = pontos - :preco WHERE id = :id AND pontos >= :preco");
+        $stmt->execute([':preco' => $caixa['preco'], ':id' => $user_id]);
+        if ($stmt->rowCount() === 0) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            return ['sucesso' => false, 'mensagem' => 'Pontos insuficientes ou erro ao debitar pontos'];
+        }
 
-                // Inserir item no inventário. Usar INSERT simples (sem ON DUPLICATE) para compatibilidade
-                $stmt = $pdo->prepare(
-                    "INSERT INTO usuario_inventario (user_id, categoria, item_id, nome_item, raridade, data_obtencao) VALUES (:uid, :cat, :iid, :nome, :rar, NOW())"
-                );
+        // Inserir item no inventário
+        $stmt = $pdo->prepare(
+            "INSERT INTO usuario_inventario (user_id, categoria, item_id, nome_item, raridade, data_obtencao) VALUES (:uid, :cat, :iid, :nome, :rar, NOW())"
+        );
 
-                $stmt->execute([
-                    ':uid' => $user_id,
-                    ':cat' => $categoria_nome,
-                    ':iid' => $item_id,
-                    ':nome' => $item['nome'],
-                    ':rar' => $raridade
-                ]);
+        $stmt->execute([
+            ':uid' => $user_id,
+            ':cat' => $categoria_nome,
+            ':iid' => $item_id,
+            ':nome' => $item['nome'],
+            ':rar' => $raridade
+        ]);
 
-                if ($pdo->inTransaction()) $pdo->commit();
+        if ($pdo->inTransaction()) $pdo->commit();
 
-                // Buscar pontos atuais para retorno confiável
-                $stmt = $pdo->prepare("SELECT pontos FROM usuarios WHERE id = :id");
-                $stmt->execute([':id' => $user_id]);
-                $usuarioAtual = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Buscar pontos atuais para retorno confiável
+        $stmt = $pdo->prepare("SELECT pontos FROM usuarios WHERE id = :id");
+        $stmt->execute([':id' => $user_id]);
+        $usuarioAtual = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                return [
-                    'sucesso' => true,
-                    'mensagem' => 'Item obtido!',
-                    'categoria' => $categoria_nome,
-                    'item_id' => $item_id,
-                    'item_nome' => $item['nome'],
-                    'raridade' => $raridade,
-                    'pontos_restantes' => $usuarioAtual ? $usuarioAtual['pontos'] : null
-                ];
-            } catch (PDOException $e) {
-                // Log error to file for debugging
-                try {
-                    $logDir = __DIR__ . '/../logs';
-                    if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
-                    $msg = date('Y-m-d H:i:s') . " - abrirLootBox error: " . $e->getMessage() . " (user_id={$user_id}, caixa={$tipo_caixa})\n";
-                    @file_put_contents($logDir . '/loot_errors.log', $msg, FILE_APPEND | LOCK_EX);
-                } catch (Exception $inner) {
-                    // ignore logging errors
-                }
-
-                if ($pdo->inTransaction()) $pdo->rollBack();
-                // Return a generic message; more details are in the log file
-                return ['sucesso' => false, 'mensagem' => 'Erro ao abrir caixa'];
-            }
+        return [
+            'sucesso' => true,
+            'mensagem' => 'Item obtido!',
+            'categoria' => $categoria_nome,
+            'item_id' => $item_id,
+            'item_nome' => $item['nome'],
+            'raridade' => $raridade,
+            'pontos_restantes' => $usuarioAtual ? $usuarioAtual['pontos'] : null
+        ];
         
     } catch (PDOException $e) {
+        if ($pdo->inTransaction()) $pdo->rollBack();
+        // Log error to file for debugging
+        try {
+            $logDir = __DIR__ . '/../logs';
+            if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+            $msg = date('Y-m-d H:i:s') . " - abrirLootBox error: " . $e->getMessage() . " (user_id={$user_id}, caixa={$tipo_caixa})\n";
+            @file_put_contents($logDir . '/loot_errors.log', $msg, FILE_APPEND | LOCK_EX);
+        } catch (Exception $inner) {
+            // ignore logging errors
+        }
         return ['sucesso' => false, 'mensagem' => 'Erro ao abrir caixa'];
     }
 }

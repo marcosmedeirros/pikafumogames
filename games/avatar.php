@@ -234,8 +234,7 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
                 hardware: equippedServer.hardware || 'none',
                 clothing: equippedServer.clothing || 'none',
                 footwear: equippedServer.footwear || 'none',
-                elite: equippedServer.elite || 'none',
-                aura: equippedServer.aura || 'none'
+                elite: equippedServer.elite || 'none'
             },
             currentTab: 'colors'
         };
@@ -338,10 +337,6 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
                         return `<svg width="44" height="44" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="#334155"/></svg>`;
                 }
             }
-            if(category === 'aura') {
-                const color = item.color || '#a78bfa';
-                return `<svg width="44" height="44" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="${color}" opacity="0.35"/><circle cx="12" cy="12" r="4" fill="${color}" opacity="0.6"/></svg>`;
-            }
             return `<div class="w-10 h-10 bg-slate-700 rounded"></div>`;
         }
 
@@ -390,7 +385,7 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
                 params.append('clothing', state.equipped.clothing);
                 params.append('footwear', state.equipped.footwear);
                 params.append('elite', state.equipped.elite);
-                params.append('aura', state.equipped.aura);
+                params.append('aura', 'none');
                 await fetch(window.location.href, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: params });
             }catch(e){ console.error('Falha ao salvar avatar', e); }
         }
@@ -402,7 +397,6 @@ $customizacao_atual = obterCustomizacaoAvatar($pdo, $user_id);
             const clothing = getItem('clothing', state.equipped.clothing);
             const footwear = getItem('footwear', state.equipped.footwear);
             const elite = getItem('elite', state.equipped.elite);
-            const aura = getItem('aura', state.equipped.aura);
 
             document.getElementById('svg-body').setAttribute('fill', color.primary);
             document.getElementById('svg-backpack').setAttribute('fill', color.secondary);

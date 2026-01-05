@@ -619,20 +619,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         if(!confirm('Criar sala apostando '+val+' pontos?')) return;
         
         const fd = new FormData(); fd.append('acao', 'criar_sala'); fd.append('valor', val);
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            if(d.erro) alert(d.erro);
-            else enterGame(d.sala_id);
-        });
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) alert('Erro: ' + d.erro);
+                else if(d.sucesso) enterGame(d.sala_id);
+                else alert('Erro desconhecido ao criar sala.');
+            })
+            .catch(err => alert('Erro ao conectar: ' + err.message));
     }
 
     function entrarSala(id, val) {
         if(!confirm('Entrar na batalha por '+val+' pontos?')) return;
         
         const fd = new FormData(); fd.append('acao', 'entrar_sala'); fd.append('sala_id', id);
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            if(d.erro) alert(d.erro);
-            else enterGame(d.sala_id);
-        });
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) alert('Erro: ' + d.erro);
+                else if(d.sucesso) enterGame(d.sala_id);
+                else alert('Erro desconhecido ao entrar na sala.');
+            })
+            .catch(err => alert('Erro ao conectar: ' + err.message));
     }
 
     function enterGame(id) {
@@ -647,40 +661,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     function gameLoop() {
         if(!salaId) return;
         const fd = new FormData(); fd.append('acao', 'buscar_estado'); fd.append('sala_id', salaId);
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            if(d.erro) { alert(d.erro); clearInterval(pollInterval); location.reload(); return; }
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) { alert(d.erro); clearInterval(pollInterval); location.reload(); return; }
 
-            // Atualiza Nome do Inimigo
-            document.getElementById('enemy-name').innerHTML = '<i class="bi bi-crosshair"></i> ' + d.nome_oponente;
+                // Atualiza Nome do Inimigo
+                document.getElementById('enemy-name').innerHTML = '<i class="bi bi-crosshair"></i> ' + d.nome_oponente;
 
-            // Logica de Estados
-            if(d.status == 'aguardando') {
-                document.getElementById('game-status-text').innerText = "AGUARDANDO OPONENTE...";
-                document.getElementById('setup-phase').style.display = 'none'; 
-                document.getElementById('setup-phase').style.display = 'block';
-            }
-            else if(d.status == 'posicionando') {
-                document.getElementById('game-status-text').innerText = "POSICIONAMENTO";
-                document.getElementById('setup-phase').style.display = 'block';
-                document.getElementById('battle-phase').style.display = 'none';
-            } 
-            else if(d.status == 'jogando') {
-                document.getElementById('setup-phase').style.display = 'none';
-                document.getElementById('battle-phase').style.display = 'flex'; 
-                
-                let msg = (d.vez_de == myId) ? "SUA VEZ! ATAQUE!" : "VEZ DO INIMIGO...";
-                let color = (d.vez_de == myId) ? "text-success" : "text-warning";
-                document.getElementById('game-status-text').innerHTML = `<span class="${color}">${msg}</span>`;
-                
-                renderBattle(d);
-            }
-            else if(d.status == 'fim') {
+                // Logica de Estados
+                if(d.status == 'aguardando') {
+                    document.getElementById('game-status-text').innerText = "AGUARDANDO OPONENTE...";
+                    document.getElementById('setup-phase').style.display = 'none'; 
+                    document.getElementById('setup-phase').style.display = 'block';
+                }
+                else if(d.status == 'posicionando') {
+                    document.getElementById('game-status-text').innerText = "POSICIONAMENTO";
+                    document.getElementById('setup-phase').style.display = 'block';
+                    document.getElementById('battle-phase').style.display = 'none';
+                } 
+                else if(d.status == 'jogando') {
+                    document.getElementById('setup-phase').style.display = 'none';
+                    document.getElementById('battle-phase').style.display = 'flex'; 
+                    
+                    let msg = (d.vez_de == myId) ? "SUA VEZ! ATAQUE!" : "VEZ DO INIMIGO...";
+                    let color = (d.vez_de == myId) ? "text-success" : "text-warning";
+                    document.getElementById('game-status-text').innerHTML = `<span class="${color}">${msg}</span>`;
+                    
+                    renderBattle(d);
+                }
+                else if(d.status == 'fim') {
+                    clearInterval(pollInterval);
+                    if(d.vencedor_id == myId) alert('VITÓRIA! Você ganhou a aposta.');
+                    else alert('DERROTA! Mais sorte na próxima.');
+                    location.reload();
+                }
+            })
+            .catch(err => {
+                console.error('Erro ao buscar estado:', err);
                 clearInterval(pollInterval);
-                if(d.vencedor_id == myId) alert('VITÓRIA! Você ganhou a aposta.');
-                else alert('DERROTA! Mais sorte na próxima.');
-                location.reload();
-            }
-        });
+            });
     }
 
     // --- SETUP FUNCTIONS ---
@@ -790,9 +813,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         fd.append('acao', 'confirmar_navios');
         fd.append('sala_id', salaId);
         fd.append('navios', JSON.stringify(flatCells)); 
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            document.getElementById('setup-phase').innerHTML = "<h3 class='text-info animate__animated animate__pulse animate__infinite'>Frota Confirmada! Aguardando oponente...</h3>";
-        });
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) { alert('Erro: ' + d.erro); return; }
+                document.getElementById('setup-phase').innerHTML = "<h3 class='text-info animate__animated animate__pulse animate__infinite'>Frota Confirmada! Aguardando oponente...</h3>";
+            })
+            .catch(err => alert('Erro ao confirmar frota: ' + err.message));
     }
 
     // --- BATTLE RENDER ---
@@ -840,9 +870,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         fd.append('sala_id', salaId);
         fd.append('x', x); fd.append('y', y);
 
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            if(d.erro) alert(d.erro);
-        });
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) alert('Erro: ' + d.erro);
+            })
+            .catch(err => alert('Erro ao atirar: ' + err.message));
     }
 
     document.addEventListener('keydown', (e) => { if(e.key === 'r' || e.key === 'R') rotateShip(); });
@@ -852,11 +888,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         if(!salaId) return alert('Você não está em uma sala.');
         if(!confirm('Deseja desistir da partida? O oponente será declarado vencedor.')) return;
         const fd = new FormData(); fd.append('acao', 'desistir'); fd.append('sala_id', salaId);
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            if(d.erro) alert(d.erro);
-            else alert(d.mensagem || 'Você desistiu.');
-            location.reload();
-        });
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) alert('Erro: ' + d.erro);
+                else alert(d.mensagem || 'Você desistiu.');
+                location.reload();
+            })
+            .catch(err => {
+                alert('Erro ao desistir: ' + err.message);
+                location.reload();
+            });
     }
 </script>
 </body>
