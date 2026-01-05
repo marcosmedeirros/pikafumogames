@@ -7,6 +7,7 @@ error_reporting(E_ALL);
 // memoria.php - O JOGO DA MEMÓRIA RAM (COM PERSISTÊNCIA E DARK MODE 💾🌙) 🧠
 // session_start já foi chamado em games/index.php
 require '../core/conexao.php';
+require '../core/sequencia_dias.php';
 
 // --- CONFIGURAÇÕES ---
 $PONTOS_VITORIA = 10;
@@ -24,6 +25,9 @@ try {
 } catch (PDOException $e) {
     die("Erro perfil: " . $e->getMessage());
 }
+
+// --- 3. OBTER SEQUÊNCIA DE DIAS ---
+$sequencia_dias = obterSequenciaDias($pdo, $user_id, 'memoria');
 
 // --- FUNÇÕES DO JOGO ---
 function gerarTabuleiroNovo() {
@@ -106,6 +110,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         if ($novo_status == 'venceu' && $dados_jogo['pontos_ganhos'] == 0) {
             $pdo->prepare("UPDATE usuarios SET pontos = pontos + :pts WHERE id = :uid")->execute([':pts' => $pontos, ':uid' => $user_id]);
+            // Atualizar sequência de dias
+            atualizarSequenciaDias($pdo, $user_id, 'memoria', true);
+        } elseif ($novo_status == 'perdeu') {
+            // Atualizar sequência de dias (perdeu)
+            atualizarSequenciaDias($pdo, $user_id, 'memoria', false);
         }
 
         echo json_encode(['status' => $novo_status, 'movimentos' => $novos_movimentos]);
@@ -212,6 +221,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     
     <div class="d-flex align-items-center gap-3">
         <a href="../index.php" class="btn btn-outline-secondary btn-sm border-0"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+        <div style="background: linear-gradient(135deg, #ff006e, #8338ec); padding: 8px 16px; border-radius: 20px; font-weight: bold; color: white; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-fire"></i>
+            <span id="sequencia-display"><?= $sequencia_dias['sequencia_atual'] ?? 0 ?></span>
+            <span style="font-size: 0.85rem;">dias</span>
+        </div>
         <span class="saldo-badge me-2"><?= number_format($meu_perfil['pontos'], 0, ',', '.') ?> pts</span>
     </div>
 </div>
