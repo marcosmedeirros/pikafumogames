@@ -1088,10 +1088,10 @@ try {
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
         <!-- Campeão Xadrez -->
         <?php if($rei_xadrez): ?>
-            <div class="ranking-card" style="text-align: center; padding: 15px;">
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div style="font-size: 2.5em; margin-bottom: 10px;">♟️</div>
                 <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Rei do Xadrez</div>
-                <div class="ranking-avatar" style="display: flex; justify-content: center; margin: 10px 0;">
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
                     <?php 
                         $avatar = obterCustomizacaoAvatar($pdo, $rei_xadrez['id']);
                         echo renderizarAvatarSVG($avatar, 64);
@@ -1103,10 +1103,10 @@ try {
 
         <!-- Campeão Pinguim -->
         <?php if($rei_pinguim): ?>
-            <div class="ranking-card" style="text-align: center; padding: 15px;">
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div style="font-size: 2.5em; margin-bottom: 10px;">🐧</div>
                 <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Rei do Pinguim</div>
-                <div class="ranking-avatar" style="display: flex; justify-content: center; margin: 10px 0;">
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
                     <?php 
                         $avatar = obterCustomizacaoAvatar($pdo, $rei_pinguim['id']);
                         echo renderizarAvatarSVG($avatar, 64);
@@ -1118,10 +1118,10 @@ try {
 
         <!-- Campeão Flappy -->
         <?php if($rei_flappy): ?>
-            <div class="ranking-card" style="text-align: center; padding: 15px;">
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div style="font-size: 2.5em; margin-bottom: 10px;">🐦</div>
                 <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Rei do Flappy</div>
-                <div class="ranking-avatar" style="display: flex; justify-content: center; margin: 10px 0;">
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
                     <?php 
                         $avatar = obterCustomizacaoAvatar($pdo, $rei_flappy['id']);
                         echo renderizarAvatarSVG($avatar, 64);
@@ -1133,10 +1133,10 @@ try {
 
         <!-- Campeão Pnip Naval -->
         <?php if($rei_pnip): ?>
-            <div class="ranking-card" style="text-align: center; padding: 15px;">
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div style="font-size: 2.5em; margin-bottom: 10px;">🚢</div>
                 <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Almirante Naval</div>
-                <div class="ranking-avatar" style="display: flex; justify-content: center; margin: 10px 0;">
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
                     <?php 
                         $avatar = obterCustomizacaoAvatar($pdo, $rei_pnip['id']);
                         echo renderizarAvatarSVG($avatar, 64);
@@ -1148,10 +1148,10 @@ try {
 
         <!-- Maior Sequência Termo -->
         <?php if($seq_termo_vencedor): ?>
-            <div class="ranking-card" style="text-align: center; padding: 15px;">
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div style="font-size: 2.5em; margin-bottom: 10px;">📝</div>
                 <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Maior Sequência Termo</div>
-                <div class="ranking-avatar" style="display: flex; justify-content: center; margin: 10px 0;">
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
                     <?php 
                         $avatar = obterCustomizacaoAvatar($pdo, $seq_termo_vencedor['id']);
                         echo renderizarAvatarSVG($avatar, 64);
@@ -1164,10 +1164,10 @@ try {
 
         <!-- Maior Sequência Memória -->
         <?php if($seq_memoria_vencedor): ?>
-            <div class="ranking-card" style="text-align: center; padding: 15px;">
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div style="font-size: 2.5em; margin-bottom: 10px;">🧠</div>
                 <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Maior Sequência Memória</div>
-                <div class="ranking-avatar" style="display: flex; justify-content: center; margin: 10px 0;">
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
                     <?php 
                         $avatar = obterCustomizacaoAvatar($pdo, $seq_memoria_vencedor['id']);
                         echo renderizarAvatarSVG($avatar, 64);
@@ -1180,10 +1180,10 @@ try {
 
         <!-- Maior Sequência Café -->
         <?php if($seq_cafe_vencedor): ?>
-            <div class="ranking-card" style="text-align: center; padding: 15px;">
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div style="font-size: 2.5em; margin-bottom: 10px;">☕</div>
                 <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Maior Sequência Café</div>
-                <div class="ranking-avatar" style="display: flex; justify-content: center; margin: 10px 0;">
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
                     <?php 
                         $avatar = obterCustomizacaoAvatar($pdo, $seq_cafe_vencedor['id']);
                         echo renderizarAvatarSVG($avatar, 64);
