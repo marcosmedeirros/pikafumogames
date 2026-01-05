@@ -323,6 +323,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             exit;
         }
 
+        // G. DESISTIR
+        if ($acao == 'desistir') {
+            $sala_id = $_POST['sala_id'];
+
+            $pdo->beginTransaction();
+
+            $stmtS = $pdo->prepare("SELECT * FROM naval_salas WHERE id = :id FOR UPDATE");
+            $stmtS->execute([':id' => $sala_id]);
+            $sala = $stmtS->fetch(PDO::FETCH_ASSOC);
+
+            if (!$sala) throw new Exception("Sala inexistente ou já encerrada.");
+
+            // Determina o oponente
+            $oponente_id = ($sala['id_jog1'] == $user_id) ? $sala['id_jog2'] : $sala['id_jog1'];
+
+            if ($oponente_id) {
+                // Marca vitória para o oponente e paga prêmio
+                $pdo->prepare("UPDATE naval_salas SET status = 'fim', vencedor_id = :vid WHERE id = :id")
+                    ->execute([':vid' => $oponente_id, ':id' => $sala_id]);
+
+                $premio = ($sala['valor_aposta'] ?? 10) * 2;
+                $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :id")
+                    ->execute([':val' => $premio, ':id' => $oponente_id]);
+
+                $pdo->commit();
+                echo json_encode(['sucesso' => true, 'mensagem' => 'Você desistiu. O oponente venceu.']);
+                exit;
+            } else {
+                // Sem oponente: encerra sala e reembolsa o criador
+                // Se o usuário que criou é quem desistiu, reembolsa
+                if ($sala['id_jog1'] == $user_id) {
+                    $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :id")
+                        ->execute([':val' => ($sala['valor_aposta'] ?? 10), ':id' => $user_id]);
+                }
+                $pdo->prepare("UPDATE naval_salas SET status = 'fim' WHERE id = :id")->execute([':id' => $sala_id]);
+                $pdo->commit();
+                echo json_encode(['sucesso' => true, 'mensagem' => 'Sala encerrada e aposta reembolsada.']);
+                exit;
+            }
+        }
+
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         echo json_encode(['erro' => $e->getMessage()]);
@@ -486,6 +527,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 <div class="text-success fw-bold fs-5"><i class="bi bi-person-fill"></i> Você</div>
                 <div class="text-secondary fw-bold small">VS</div>
                 <div class="text-danger fw-bold fs-5" id="enemy-name"><i class="bi bi-incognito"></i> Oponente</div>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-sm btn-outline-danger" onclick="desistir()"><i class="bi bi-flag-fill me-1"></i> Desistir</button>
             </div>
         </div>
 
@@ -758,6 +802,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     }
 
     document.addEventListener('keydown', (e) => { if(e.key === 'r' || e.key === 'R') rotateShip(); });
+
+    // Desistir da partida
+    function desistir() {
+        if(!salaId) return alert('Você não está em uma sala.');
+        if(!confirm('Deseja desistir da partida? O oponente será declarado vencedor.')) return;
+        const fd = new FormData(); fd.append('acao', 'desistir'); fd.append('sala_id', salaId);
+        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
+            if(d.erro) alert(d.erro);
+            else alert(d.mensagem || 'Você desistiu.');
+            location.reload();
+        });
+    }
 </script>
 </body>
 </html>

@@ -302,33 +302,51 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
         $item_id = $picked['id'];
         $item = $picked['item'];
         
-        // Descontar pontos
-        $stmt = $pdo->prepare("UPDATE usuarios SET pontos = pontos - :preco WHERE id = :id");
-        $stmt->execute([':preco' => $caixa['preco'], ':id' => $user_id]);
-        
-        // Registrar item obtido
-        $stmt = $pdo->prepare("
-            INSERT INTO usuario_inventario (user_id, categoria, item_id, nome_item, raridade, data_obtencao)
-            VALUES (:uid, :cat, :iid, :nome, :rar, NOW())
-        ");
-        
-        $stmt->execute([
-            ':uid' => $user_id,
-            ':cat' => $categoria_nome,
-            ':iid' => $item_id,
-            ':nome' => $item['nome'],
-            ':rar' => $raridade
-        ]);
-        
-        return [
-            'sucesso' => true,
-            'mensagem' => 'Item obtido!',
-            'categoria' => $categoria_nome,
-            'item_id' => $item_id,
-            'item_nome' => $item['nome'],
-            'raridade' => $raridade,
-            'pontos_restantes' => $usuario['pontos'] - $caixa['preco']
-        ];
+            // Use transação para garantir atomicidade: descontar pontos + registrar item
+            try {
+                if (!$pdo->inTransaction()) $pdo->beginTransaction();
+
+                // Descontar pontos apenas se o usuário ainda tiver saldo suficiente (proteção contra concorrência)
+                $stmt = $pdo->prepare("UPDATE usuarios SET pontos = pontos - :preco WHERE id = :id AND pontos >= :preco");
+                $stmt->execute([':preco' => $caixa['preco'], ':id' => $user_id]);
+                if ($stmt->rowCount() === 0) {
+                    if ($pdo->inTransaction()) $pdo->rollBack();
+                    return ['sucesso' => false, 'mensagem' => 'Pontos insuficientes ou erro ao debitar pontos'];
+                }
+
+                // Inserir item no inventário. Use ON DUPLICATE KEY UPDATE para evitar erro se já houver registro
+                $stmt = $pdo->prepare(
+                    "INSERT INTO usuario_inventario (user_id, categoria, item_id, nome_item, raridade, data_obtencao)\n                 VALUES (:uid, :cat, :iid, :nome, :rar, NOW())\n                 ON DUPLICATE KEY UPDATE nome_item = VALUES(nome_item), raridade = VALUES(raridade), data_obtencao = NOW()"
+                );
+
+                $stmt->execute([
+                    ':uid' => $user_id,
+                    ':cat' => $categoria_nome,
+                    ':iid' => $item_id,
+                    ':nome' => $item['nome'],
+                    ':rar' => $raridade
+                ]);
+
+                if ($pdo->inTransaction()) $pdo->commit();
+
+                // Buscar pontos atuais para retorno confiável
+                $stmt = $pdo->prepare("SELECT pontos FROM usuarios WHERE id = :id");
+                $stmt->execute([':id' => $user_id]);
+                $usuarioAtual = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                return [
+                    'sucesso' => true,
+                    'mensagem' => 'Item obtido!',
+                    'categoria' => $categoria_nome,
+                    'item_id' => $item_id,
+                    'item_nome' => $item['nome'],
+                    'raridade' => $raridade,
+                    'pontos_restantes' => $usuarioAtual ? $usuarioAtual['pontos'] : null
+                ];
+            } catch (PDOException $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                return ['sucesso' => false, 'mensagem' => 'Erro ao abrir caixa'];
+            }
         
     } catch (PDOException $e) {
         return ['sucesso' => false, 'mensagem' => 'Erro ao abrir caixa'];
