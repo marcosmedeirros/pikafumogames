@@ -230,17 +230,17 @@ function renderizarAvatarSVG($customizacao, $size = 100) {
     // Hardware (emoji simples no topo, colado na cabeça)
     $hw = $customizacao['hardware'] ?? 'none';
     if ($hw === 'pixel_crown' || $hw === 'crown_mythic') {
-        $svg .= "<text x=\"50\" y=\"10\" text-anchor=\"middle\" font-size=\"18\">👑</text>";
+        $svg .= "<text x=\"50\" y=\"22\" text-anchor=\"middle\" font-size=\"20\">👑</text>";
     } elseif ($hw === 'antenna_dish') {
-        $svg .= "<text x=\"50\" y=\"10\" text-anchor=\"middle\" font-size=\"18\">📡</text>";
+        $svg .= "<text x=\"50\" y=\"22\" text-anchor=\"middle\" font-size=\"20\">📡</text>";
     } elseif ($hw === 'halo') {
-        $svg .= "<text x=\"50\" y=\"8\" text-anchor=\"middle\" font-size=\"18\">✨</text>";
+        $svg .= "<text x=\"50\" y=\"20\" text-anchor=\"middle\" font-size=\"20\">✨</text>";
     } elseif ($hw === 'robot_ears') {
-        $svg .= "<text x=\"50\" y=\"10\" text-anchor=\"middle\" font-size=\"18\">👂</text>";
+        $svg .= "<text x=\"50\" y=\"22\" text-anchor=\"middle\" font-size=\"20\">👂</text>";
     } elseif ($hw === 'spiky_hair') {
-        $svg .= "<text x=\"50\" y=\"10\" text-anchor=\"middle\" font-size=\"18\">⚡</text>";
+        $svg .= "<text x=\"50\" y=\"22\" text-anchor=\"middle\" font-size=\"20\">⚡</text>";
     } elseif ($hw === 'visor_tech') {
-        $svg .= "<text x=\"50\" y=\"10\" text-anchor=\"middle\" font-size=\"18\">🔍</text>";
+        $svg .= "<text x=\"50\" y=\"22\" text-anchor=\"middle\" font-size=\"20\">🔍</text>";
     }
     $svg .= "</svg>";
     return $svg;
