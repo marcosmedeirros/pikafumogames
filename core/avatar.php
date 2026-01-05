@@ -347,15 +347,25 @@ function abrirLootBox($pdo, $user_id, $tipo_caixa) {
             "INSERT INTO usuario_inventario (user_id, categoria, item_id, nome_item, raridade, data_obtencao) VALUES (:uid, :cat, :iid, :nome, :rar, NOW())"
         );
 
-        $stmt->execute([
-            ':uid' => $user_id,
-            ':cat' => $categoria_nome,
-            ':iid' => $item_id,
-            ':nome' => $item['nome'],
-            ':rar' => $raridade
-        ]);
+        try {
+            $stmt->execute([
+                ':uid' => $user_id,
+                ':cat' => $categoria_nome,
+                ':iid' => $item_id,
+                ':nome' => $item['nome'],
+                ':rar' => $raridade
+            ]);
+            @file_put_contents($logFile, "  Item inserido no inventário\n", FILE_APPEND | LOCK_EX);
+        } catch (PDOException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $erro = $e->getMessage();
+            @file_put_contents($logFile, "  ❌ Erro ao inserir item: $erro\n", FILE_APPEND | LOCK_EX);
+            error_log("Erro ao inserir item: $erro");
+            throw $e;
+        }
 
         if ($pdo->inTransaction()) $pdo->commit();
+        @file_put_contents($logFile, "  Transação commitada\n", FILE_APPEND | LOCK_EX);
 
         // Buscar pontos atuais
         $stmt = $pdo->prepare("SELECT pontos FROM usuarios WHERE id = :id");
