@@ -183,6 +183,27 @@ try {
             color: white;
         }
 
+        .avatar-btn {
+            background: linear-gradient(135deg, #9d4edd, #5a189a);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .avatar-btn:hover {
+            background: linear-gradient(135deg, #a855f7, #6d28d9);
+            box-shadow: 0 0 12px rgba(157, 78, 221, 0.5);
+            color: white;
+            text-decoration: none;
+        }
+
         /* ===== CONTAINER ===== */
         .container-main {
             padding: 40px 20px;
@@ -626,16 +647,26 @@ try {
     <a href="#" class="brand-name">🎮 PIKAFUMO</a>
     
     <div class="d-flex align-items-center gap-3">
-        <div class="d-none d-md-flex align-items-center gap-3">
+        <div class="d-none d-md-flex align-items-center gap-2">
             <div>
                 <span style="color: #999; font-size: 0.9rem;">Bem-vindo(a),</span>
                 <strong><?= htmlspecialchars($usuario['nome']) ?></strong>
+            </div>
+            <div style="width: 36px; height: 51px; display: flex; align-items: center; justify-content: center; border: 1px solid #444; border-radius: 4px;">
+                <?php 
+                    $avatar_user = obterCustomizacaoAvatar($pdo, $user_id);
+                    echo renderizarAvatarSVG($avatar_user, 24);
+                ?>
             </div>
         </div>
         
         <?php if (!empty($usuario['is_admin']) && $usuario['is_admin'] == 1): ?>
             <a href="admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
         <?php endif; ?>
+        
+        <a href="games/avatar.php" class="avatar-btn">
+            <i class="bi bi-palette-fill"></i> Avatar
+        </a>
         
         <span class="saldo-badge">
             <i class="bi bi-coin me-1"></i><?= number_format($usuario['pontos'], 0, ',', '.') ?> pts
