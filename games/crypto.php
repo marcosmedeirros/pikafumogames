@@ -361,18 +361,18 @@ function desenharGrafico() {
     ctx.strokeStyle = gameState === 'crashed' ? '#fff' : '#8b1528';
     ctx.lineWidth = 4;
     ctx.beginPath();
-    const steps = Math.min(animationFrame, 150);
+    const steps = Math.min(animationFrame, 400);
     for (let i = 0; i <= steps; i++) {
-        const t = i / 150;
+        const t = i / 400;
         const x = startX + (maxX - startX) * t;
-        const progress = Math.pow(t, 1.2);
+        const progress = Math.pow(t, 1.05);
         const y = startY - (currentMultiplier - 1) * (maxY - padding) * progress * 0.9;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
     }
     ctx.stroke();
     ctx.shadowColor = 'transparent';
-    const t = Math.min(animationFrame / 150, 1);
+    const t = Math.min(animationFrame / 400, 1);
     const rocketX = padding + (maxX - padding) * t;
     const progress = Math.pow(t, 1.2);
     const rocketY = startY - (currentMultiplier - 1) * (maxY - padding) * progress * 0.9;
@@ -411,9 +411,9 @@ function animacaoJogo() {
     if (gameState !== 'idle') {
         desenharGrafico();
         if (gameState === 'playing') {
-            animationFrame += 0.25;
-            const t = Math.min(animationFrame / 150, 1);
-            currentMultiplier = 1.0 + Math.pow(t, 1.1) * 4;
+            animationFrame += 0.08;
+            const t = Math.min(animationFrame / 400, 1);
+            currentMultiplier = 1.0 + Math.pow(t, 1.05) * 2.5;
             if (currentMultiplier >= currentRound.crash_point) {
                 gameState = 'crashed';
                 crasharJogo();
