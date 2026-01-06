@@ -331,7 +331,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         document.getElementById('lobby-screen').classList.remove('hidden');
         
         const fd = new FormData(); fd.append('acao', 'entrar_fila');
-        fetch('corrida.php', { method:'POST', body:fd }).then(r=>r.json()).then(d => {
+        fetch('index.php?game=corrida', { method:'POST', body:fd }).then(r=>r.json()).then(d => {
             if(d.erro) { alert(d.erro); location.reload(); return; }
             roomId = d.sala_id;
             syncInterval = setInterval(syncLobby, 1500); // Polling lento no lobby
@@ -341,12 +341,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
     function toggleReady() {
         const fd = new FormData(); fd.append('acao', 'ficar_pronto'); fd.append('sala_id', roomId);
-        fetch('corrida.php', { method:'POST', body:fd }).then(r=>r.json()).then(d => syncLobby());
+        fetch('index.php?game=corrida', { method:'POST', body:fd }).then(r=>r.json()).then(d => syncLobby());
     }
 
     function syncLobby() {
         const fd = new FormData(); fd.append('acao', 'sync_estado'); fd.append('sala_id', roomId);
-        fetch('corrida.php', { method:'POST', body:fd }).then(r=>r.json()).then(d => {
+        fetch('index.php?game=corrida', { method:'POST', body:fd }).then(r=>r.json()).then(d => {
             renderLobby(d.players);
             // Verifica se começou
             if(d.sala.status === 'correndo') {
@@ -448,7 +448,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         fd.append('progresso', prog);
         fd.append('lane', myLane);
         
-        fetch('corrida.php', { method:'POST', body:fd }).then(r=>r.json()).then(d => {
+        fetch('index.php?game=corrida', { method:'POST', body:fd }).then(r=>r.json()).then(d => {
             updateOpponents(d.players);
         });
     }
@@ -579,9 +579,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             ctx.lineDashOffset = -offset; ctx.stroke();
         }
 
-        // Bordas (Zebra)
-        let zebraOffset = Math.floor(cameraY / 50) % 2 == 0;
-        ctx.fillStyle = zebraOffset ? '#d32f2f' : '#fff';
+        // Bordas (Barreira lateral fixa)
+        ctx.fillStyle = '#d32f2f';
         ctx.fillRect(0,0, 20, 800); ctx.fillRect(canvas.width-20, 0, 20, 800);
 
         // Oponentes (Fantasmas)
@@ -664,12 +663,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         fd.append('sala_id', roomId);
         fd.append('tempo', raceTime);
         fd.append('moedas', coinsCollected);
-        fetch('corrida.php', { method:'POST', body:fd });
+        fetch('index.php?game=corrida', { method:'POST', body:fd });
 
         // Busca pódio (delay pequeno para garantir que banco atualizou)
         setTimeout(() => {
             const fd2 = new FormData(); fd2.append('acao', 'ver_podio'); fd2.append('sala_id', roomId); fd2.append('modo', gameMode); fd2.append('moedas', coinsCollected);
-            fetch('corrida.php', { method:'POST', body:fd2 }).then(r=>r.json()).then(d => {
+            fetch('index.php?game=corrida', { method:'POST', body:fd2 }).then(r=>r.json()).then(d => {
                 let html = '<h5 class="text-warning mb-3">⏱️ RANKING DE TEMPO</h5>';
                 html += '<ol class="list-group list-group-numbered" style="list-style: none; padding: 0;">';
                 d.ranking.forEach((r, idx) => {
