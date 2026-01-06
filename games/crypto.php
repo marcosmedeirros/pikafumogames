@@ -263,8 +263,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         <!-- Full-width: Valor da Aposta (linha inteira) -->
         <div class="control-section" style="width:100%; margin-top:10px;">
-            <label for="apostaInput">Valor da Aposta (1 - <?= $meu_perfil['pontos'] ?>)</label>
-            <input type="number" id="apostaInput" class="form-control" min="1" max="<?= $meu_perfil['pontos'] ?>" value="10" placeholder="Digite o valor">
+            <label for="apostaInput">Valor da Aposta (1 - 10)</label>
+            <input type="number" id="apostaInput" class="form-control" min="1" max="10" value="10" placeholder="Digite o valor">
             <div class="control-buttons">
                 <button class="btn-custom" id="btnPlay" onclick="iniciarRodada()">▶️ JOGAR</button>
                 <button class="btn-custom" id="btnCashout" onclick="cashOut()" style="display: none;">💰 CASH OUT</button>
@@ -393,15 +393,17 @@ function desenharGrafico() {
     ctx.shadowColor = 'transparent';
     ctx.textAlign = 'left';
     ctx.fillStyle = gameState === 'crashed' ? '#fff' : '#8b1528';
-    ctx.font = 'bold 18px Courier New';
-    ctx.fillText('📈 Multiplicador: ' + currentMultiplier.toFixed(2) + 'x', padding, 40);
+    ctx.font = 'bold 28px Courier New';
+    ctx.fillText('� ' + currentMultiplier.toFixed(2) + 'x', padding + 20, 70);
     if (gameState === 'crashed') {
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 40px Courier New';
+        ctx.font = 'bold 60px Courier New';
         ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
-        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(255, 68, 68, 0.9)';
+        ctx.shadowBlur = 30;
         ctx.fillText('💥 CRASHED! 💥', gameWidth / 2, gameHeight / 2);
+        ctx.font = 'bold 30px Courier New';
+        ctx.fillText('Multiplicador: ' + currentMultiplier.toFixed(2) + 'x', gameWidth / 2, gameHeight / 2 + 50);
         ctx.shadowColor = 'transparent';
         ctx.textAlign = 'left';
     }
