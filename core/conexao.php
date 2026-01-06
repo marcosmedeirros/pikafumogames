@@ -3,8 +3,8 @@
 
 $host = 'localhost';
 $dbname = 'u289267434_lumacio';
-$user = 'u289267434_macoinhas';
-$pass = 'Zonete@13'; // <--- Coloque a senha que você criou para esse usuário no painel
+$user = 'root';
+$pass = ''; // <--- Coloque a senha que você criou para esse usuário no painel
 
 try {
     // Conexão com PDO

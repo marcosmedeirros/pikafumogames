@@ -708,6 +708,14 @@ try {
         </div>
 
         <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/index.php?game=corrida" class="game-card" style="--accent: #ff1744;">
+                <span class="game-icon">🏎️</span>
+                <div class="game-title">Corrida Neon</div>
+                <div class="game-subtitle">Corrida solo ou 4P</div>
+            </a>
+        </div>
+
+        <div class="col-6 col-md-4 col-lg-3">
             <a href="user/ranking.php" class="game-card" style="--accent: #ffc107;">
                 <span class="game-icon">🏆</span>
                 <div class="game-title">Ranking Geral</div>

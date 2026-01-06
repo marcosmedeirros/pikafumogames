@@ -10,11 +10,17 @@ require '../core/conexao.php';
 
 // --- CONFIGURAÇÕES ---
 $PONTOS_VITORIA = 10;
-$LIMITE_MOVIMENTOS = 16; 
+$LIMITE_MOVIMENTOS = 18; 
 
 // 1. Segurança
 if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
 $user_id = $_SESSION['user_id'];
+
+// 1.1 Campos de streak (idempotente)
+try {
+    $pdo->exec("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS memoria_streak INT DEFAULT 0");
+    $pdo->exec("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS memoria_last DATE DEFAULT NULL");
+} catch (Exception $e) {}
 
 // --- 2. DADOS DO USUÁRIO (PARA O HEADER) ---
 try {
@@ -105,7 +111,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         $stmtUpd->execute([':m' => $novos_movimentos, ':t' => $tempo, ':st_json' => $novo_estado_json, ':st' => $novo_status, ':pts' => $pontos, ':id' => $dados_jogo['id']]);
 
         if ($novo_status == 'venceu' && $dados_jogo['pontos_ganhos'] == 0) {
-            $pdo->prepare("UPDATE usuarios SET pontos = pontos + :pts WHERE id = :uid")->execute([':pts' => $pontos, ':uid' => $user_id]);
+            try {
+                $pdo->beginTransaction();
+
+                // Calcula streak com base nos últimos dias vencidos (inclui o dia atual)
+                $stmtStreak = $pdo->prepare("SELECT data_jogo FROM memoria_historico WHERE id_usuario = :uid AND status = 'venceu' ORDER BY data_jogo DESC LIMIT 60");
+                $stmtStreak->execute([':uid' => $user_id]);
+                $datas = $stmtStreak->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
+                $diaRef = $hoje;
+                $novoStreak = 0;
+                foreach ($datas as $dataJogo) {
+                    if ($dataJogo === $diaRef) {
+                        $novoStreak++;
+                        $diaRef = date('Y-m-d', strtotime($diaRef . ' -1 day'));
+                    } else {
+                        break;
+                    }
+                }
+                if ($novoStreak === 0) $novoStreak = 1; // garante pelo menos o dia atual
+
+                $pdo->prepare("UPDATE usuarios SET pontos = pontos + :pts, memoria_streak = :stk, memoria_last = :dt WHERE id = :uid")
+                    ->execute([':pts' => $pontos, ':stk' => $novoStreak, ':dt' => $hoje, ':uid' => $user_id]);
+                $pdo->commit();
+            } catch (Exception $e) {
+                $pdo->rollBack();
+            }
         }
 
         echo json_encode(['status' => $novo_status, 'movimentos' => $novos_movimentos]);

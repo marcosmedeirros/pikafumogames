@@ -16,6 +16,12 @@ $MAX_TENTATIVAS = 6;
 if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
 $user_id = $_SESSION['user_id'];
 
+// 1.1 Campos de streak (idempotente)
+try {
+    $pdo->exec("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS termo_streak INT DEFAULT 0");
+    $pdo->exec("ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS termo_last DATE DEFAULT NULL");
+} catch (Exception $e) {}
+
 // --- 2. DADOS DO USUÁRIO (PARA O HEADER) ---
 try {
     $stmtMe = $pdo->prepare("SELECT nome, pontos, is_admin FROM usuarios WHERE id = :id");
@@ -158,11 +164,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['chute'])) {
     }
 
     if ($ganhou_rodada) {
-        $pdo->prepare("UPDATE termo_historico SET ganhou = 1, pontos_ganhos = :pts WHERE id_usuario = :uid AND data_jogo = :dt")
-            ->execute([':pts' => $PONTOS_VITORIA, ':uid' => $user_id, ':dt' => $hoje]);
-        
-        $pdo->prepare("UPDATE usuarios SET pontos = pontos + :pts WHERE id = :uid")
-            ->execute([':pts' => $PONTOS_VITORIA, ':uid' => $user_id]);
+        try {
+            $pdo->beginTransaction();
+
+            $pdo->prepare("UPDATE termo_historico SET ganhou = 1, pontos_ganhos = :pts WHERE id_usuario = :uid AND data_jogo = :dt")
+                ->execute([':pts' => $PONTOS_VITORIA, ':uid' => $user_id, ':dt' => $hoje]);
+
+            // Calcula streak de vitórias consecutivas incluindo o dia atual
+            $stmtStreak = $pdo->prepare("SELECT data_jogo FROM termo_historico WHERE id_usuario = :uid AND ganhou = 1 ORDER BY data_jogo DESC LIMIT 60");
+            $stmtStreak->execute([':uid' => $user_id]);
+            $datas = $stmtStreak->fetchAll(PDO::FETCH_COLUMN) ?: [];
+
+            $diaRef = $hoje;
+            $novoStreak = 0;
+            foreach ($datas as $dataJogo) {
+                if ($dataJogo === $diaRef) {
+                    $novoStreak++;
+                    $diaRef = date('Y-m-d', strtotime($diaRef . ' -1 day'));
+                } else {
+                    break;
+                }
+            }
+            if ($novoStreak === 0) $novoStreak = 1; // pelo menos o dia atual
+
+            $pdo->prepare("UPDATE usuarios SET pontos = pontos + :pts, termo_streak = :stk, termo_last = :dt WHERE id = :uid")
+                ->execute([':pts' => $PONTOS_VITORIA, ':stk' => $novoStreak, ':dt' => $hoje, ':uid' => $user_id]);
+
+            $pdo->commit();
+        } catch (Exception $e) { $pdo->rollBack(); }
     }
 
     $acabou = ($ganhou_rodada || $num_tentativas >= $MAX_TENTATIVAS);

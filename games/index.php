@@ -45,6 +45,10 @@ $games_disponiveis = [
     'apostas' => [
         'titulo' => '💰 Apostas',
         'arquivo' => 'apostas.php'
+    ],
+    'corrida' => [
+        'titulo' => '🏎️ Corrida Neon',
+        'arquivo' => 'corrida.php'
     ]
 ];
 

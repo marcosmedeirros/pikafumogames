@@ -106,10 +106,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         exit;
     }
     
-    // C. SALVAR PONTOS (Milestone)
+    // C. SALVAR PONTOS (Milestone dinâmico, com limite anti-abuso)
     if ($_POST['acao'] == 'salvar_milestone') {
-        $pdo->prepare("UPDATE usuarios SET pontos = pontos + 3 WHERE id = :uid")->execute([':uid' => $user_id]);
-        echo json_encode(['sucesso' => true]);
+        $qtd = isset($_POST['qtd']) ? (int) $_POST['qtd'] : 0;
+        // Evita valores negativos ou exagerados vindo do cliente
+        $qtd = max(0, min($qtd, 10));
+        if ($qtd > 0) {
+            $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :uid")
+                ->execute([':val' => $qtd, ':uid' => $user_id]);
+        }
+        echo json_encode(['sucesso' => true, 'creditado' => $qtd]);
         exit;
     }
 
@@ -360,7 +366,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     let highScore = localStorage.getItem('dinoHighScore') || 0;
     let isGameOver = false;
     let animationId;
-    let prevScore = 0; 
+    let nextRewardAt = 100; // controle de pagamento a cada 100m
     let currentBiomeIndex = 0;
     let backgroundX = 0;
     let hasRevived = false;
@@ -452,7 +458,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         isGameOver = false;
         hasRevived = false;
         score = 0;
-        prevScore = 0;
+        nextRewardAt = 100;
         gameSpeed = 8;
         obstacles = [];
         spawnTimer = 0;
@@ -619,10 +625,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         scoreEl.innerText = currentIntScore;
         gameSpeed += 0.003; 
 
-        if (currentIntScore > 0 && currentIntScore % 1000 === 0 && currentIntScore > prevScore) {
-            saveMilestonePoints();
+        while (currentIntScore >= nextRewardAt) {
+            const coinsPer100 = 1 + Math.floor(currentIntScore / 500); // 0-499:1 | 500-999:2 | 1000+:3...
+            creditMilestoneCoins(coinsPer100);
+            nextRewardAt += 100;
         }
-        prevScore = currentIntScore;
     }
 
     function gameOver() {
@@ -704,16 +711,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         if(shopBtnContainer) shopBtnContainer.style.display = 'none';
     }
 
-    function saveMilestonePoints() {
-        showFloatingText("+3 PONTOS!", dino.x + 20, dino.y - 50);
+    function creditMilestoneCoins(amount) {
+        if (amount <= 0) return;
+        showFloatingText(`+${amount} PTS`, dino.x + 20, dino.y - 50);
+
         const formData = new FormData();
         formData.append('acao', 'salvar_milestone');
+        formData.append('qtd', amount);
 
         fetch('index.php?game=pinguim', { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => {
-            if(data.sucesso) {
-                currentSaldo += 3; 
+            const ganho = (data && typeof data.creditado !== 'undefined') ? parseInt(data.creditado, 10) : amount;
+            if(ganho > 0) {
+                currentSaldo += ganho; 
                 saldoDisplay.innerText = currentSaldo.toLocaleString('pt-BR') + " pts";
                 saldoDisplay.style.backgroundColor = "#ffeb3b";
                 saldoDisplay.style.color = "#000";

@@ -328,8 +328,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                     }
 
                     if(score % 10 === 0) {
-                        coinsEarned++; showFloatingText("+1 MOEDA", bird.x, bird.y - 30);
-                        showFloatingText("VELOCIDADE UP!", bird.x, bird.y - 50);
+                        const reward = 1 + (score / 10); // 10 túneis=2, 20=3, 30=4...
+                        coinsEarned += reward;
+                        showFloatingText(`+${reward} MOEDAS`, bird.x, bird.y - 30);
                     }
                 }
                 if(p.x + this.w <= 0) { this.items.shift(); i--; }
