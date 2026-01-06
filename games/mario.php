@@ -323,6 +323,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = false;
         });
 
+        function respawnOnPlatform() {
+            // Pega uma plataforma aleatória (exceto o chão)
+            let availablePlatforms = platforms.filter(p => !p.isFloor);
+            if (availablePlatforms.length > 0) {
+                let platform = availablePlatforms[Math.floor(Math.random() * availablePlatforms.length)];
+                mario.x = platform.x + (platform.width / 2) - (mario.width / 2);
+                mario.y = platform.y - mario.height - 5;
+            } else {
+                // Se não houver plataforma, volta pro chão
+                mario.x = canvas.width / 2 - 15;
+                mario.y = canvas.height - 100;
+            }
+            mario.velocityY = 0;
+        }
+
         function getEnemyCount() { return 1 + Math.floor(level / 3); }
         function getEnemySpeed() { return 1.5 + (level * 0.3); }
         function getPlatformCount() { return 7 + Math.floor(level / 2); }
@@ -451,8 +466,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                     } else {
                         lives--;
                         updateLivesDisplay();
-                        mario.y = canvas.height - 100;
-                        mario.velocityY = 0;
+                        respawnOnPlatform();
                         if (lives <= 0) endGame();
                     }
                 }
@@ -490,12 +504,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 }
             });
 
-            // Game Over
+            // Game Over ao cair para fora da tela
             if (mario.y > canvas.height) {
                 lives--;
                 updateLivesDisplay();
-                mario.y = canvas.height - 100;
-                mario.velocityY = 0;
+                respawnOnPlatform();
                 if (lives <= 0) endGame();
             }
 
