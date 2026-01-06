@@ -170,40 +170,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         .saldo-badge { background: rgba(196, 30, 58, 0.2); border: 1px solid var(--accent); padding: 8px 15px; border-radius: 6px; color: var(--accent); font-weight: bold; }
         .container-main { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
         .section-title { color: var(--accent); font-size: 1.3em; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(196, 30, 58, 0.3); }
-        .game-container { background: linear-gradient(135deg, rgba(196, 30, 58, 0.05) 0%, rgba(196, 30, 58, 0.02) 100%); border: 2px solid var(--accent); border-radius: 12px; padding: 25px; margin-bottom: 30px; }
-        .game-title { color: var(--accent); font-size: 1.8em; margin-bottom: 20px; text-align: center; font-weight: bold; text-shadow: 0 0 15px rgba(196, 30, 58, 0.4); }
-        .canvas-wrapper { background: #000; border: 1px solid rgba(196, 30, 58, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px; overflow: hidden; }
-        canvas { display: block; width: 100%; height: auto; background: #000; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: rgba(196, 30, 58, 0.1); border: 1px solid var(--accent); padding: 15px; border-radius: 8px; text-align: center; }
-        .stat-label { color: rgba(196, 30, 58, 0.8); font-size: 0.9em; margin-bottom: 8px; }
-        .stat-value { color: var(--accent); font-size: 1.6em; font-weight: bold; }
-        .control-section { background: rgba(196, 30, 58, 0.1); border: 1px solid var(--accent); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-        .control-section label { color: var(--accent); font-weight: bold; margin-bottom: 8px; display: block; }
-        .form-control { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(196, 30, 58, 0.5); color: #fff; padding: 12px; border-radius: 6px; margin-bottom: 15px; }
+        .game-container { background: linear-gradient(135deg, rgba(196, 30, 58, 0.05) 0%, rgba(196, 30, 58, 0.02) 100%); border: 2px solid var(--accent); border-radius: 12px; padding: 25px; margin-bottom: 30px; display: flex; flex-direction: column; gap: 20px; }
+        .game-title { color: var(--accent); font-size: 1.8em; margin-bottom: 0; text-align: center; font-weight: bold; text-shadow: 0 0 15px rgba(196, 30, 58, 0.4); width: 100%; }
+        .game-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; align-items: start; }
+        .game-left { display: flex; flex-direction: column; gap: 15px; }
+        .game-right { display: flex; flex-direction: column; gap: 15px; }
+        .canvas-wrapper { background: #000; border: 1px solid rgba(196, 30, 58, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 0; overflow: hidden; max-width: 100%; }
+        canvas { display: block; width: 100%; height: auto; background: #000; max-height: 350px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 0; }
+        .stat-card { background: rgba(196, 30, 58, 0.1); border: 1px solid var(--accent); padding: 12px; border-radius: 8px; text-align: center; }
+        .stat-label { color: rgba(196, 30, 58, 0.8); font-size: 0.8em; margin-bottom: 5px; }
+        .stat-value { color: var(--accent); font-size: 1.4em; font-weight: bold; }
+        .control-section { background: rgba(196, 30, 58, 0.1); border: 1px solid var(--accent); border-radius: 8px; padding: 15px; margin-bottom: 0; }
+        .control-section label { color: var(--accent); font-weight: bold; margin-bottom: 8px; display: block; font-size: 0.9em; }
+        .form-control { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(196, 30, 58, 0.5); color: #fff; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 0.95em; }
         .form-control:focus { background: rgba(255, 255, 255, 0.08); border-color: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(196, 30, 58, 0.3); }
-        .btn-custom { background: var(--accent); color: #fff; border: none; padding: 12px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.3s; margin-right: 10px; margin-bottom: 10px; }
+        .btn-custom { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.3s; margin-right: 0; margin-bottom: 8px; font-size: 0.95em; }
         .btn-custom:hover { background: #a01830; box-shadow: 0 0 15px rgba(196, 30, 58, 0.6); transform: scale(1.05); }
         .btn-custom:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-back { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 10px 20px; border-radius: 6px; cursor: pointer; transition: all 0.3s; font-weight: bold; display: block; width: 100%; margin-top: 10px; }
+        .btn-back { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: all 0.3s; font-weight: bold; display: block; width: 100%; margin-top: 0; font-size: 0.9em; }
         .btn-back:hover { background: rgba(196, 30, 58, 0.2); }
         .message { padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; border: 1px solid; }
         .message.show { display: block; }
         .message.success { background: rgba(46, 213, 115, 0.1); border-color: #2ed573; color: #2ed573; }
         .message.error { background: rgba(255, 68, 68, 0.1); border-color: #ff4444; color: #ff4444; }
         .message.crash { background: rgba(196, 30, 58, 0.2); border-color: var(--accent); color: var(--accent); }
-        .crash-history { background: rgba(196, 30, 58, 0.1); border: 1px solid var(--accent); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-        .crash-items { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-        .crash-item { background: rgba(196, 30, 58, 0.2); border: 1px solid var(--accent); padding: 10px 15px; border-radius: 6px; color: var(--accent); font-weight: bold; transition: all 0.3s; }
+        .crash-history { background: rgba(196, 30, 58, 0.1); border: 1px solid var(--accent); border-radius: 8px; padding: 15px; margin-bottom: 0; }
+        .crash-items { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .crash-item { background: rgba(196, 30, 58, 0.2); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; color: var(--accent); font-weight: bold; transition: all 0.3s; font-size: 0.9em; }
         .crash-item:hover { background: rgba(196, 30, 58, 0.4); box-shadow: 0 0 10px rgba(196, 30, 58, 0.5); }
         .history-table { width: 100%; background: rgba(196, 30, 58, 0.05); border: 1px solid var(--accent); border-radius: 8px; overflow: hidden; margin-top: 20px; }
         .history-table table { width: 100%; border-collapse: collapse; }
         .history-table th { background: rgba(196, 30, 58, 0.2); color: var(--accent); padding: 12px; text-align: left; border-bottom: 1px solid var(--accent); font-weight: bold; }
         .history-table td { padding: 10px 12px; border-bottom: 1px solid rgba(196, 30, 58, 0.2); color: rgba(255, 255, 255, 0.8); }
         .history-table tr:hover { background: rgba(196, 30, 58, 0.1); }
-        .control-buttons { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
-        .control-buttons .btn-custom { flex: 1; min-width: 120px; }
-        @media (max-width: 768px) { .control-buttons { flex-direction: column; } .control-buttons .btn-custom { width: 100%; margin-right: 0; } }
+        .control-buttons { display: flex; gap: 8px; flex-direction: column; align-items: stretch; }
+        .control-buttons .btn-custom { flex: 1; min-width: auto; margin-right: 0; }
+        @media (max-width: 1200px) { .game-columns { grid-template-columns: 1fr; } .game-left, .game-right { width: 100%; } }
+        @media (max-width: 768px) { .control-buttons { flex-direction: column; } .control-buttons .btn-custom { width: 100%; margin-right: 0; } .game-columns { grid-template-columns: 1fr; } canvas { max-height: 300px; } }
     </style>
 </head>
 <body>
@@ -232,38 +236,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <h5 class="section-title"><i class="bi bi-rocket-fill"></i> 🚀 Crypto Crash</h5>
     <div class="game-container">
         <div class="game-title">🚀 O FOGUETE</div>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-label">📊 Rodadas</div>
-                <div class="stat-value"><?= $stats['total_rodadas'] ?? 0 ?></div>
+        <div class="game-columns">
+            <div class="game-left">
+                <div class="canvas-wrapper">
+                    <canvas id="gameCanvas" width="800" height="400"></canvas>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-label">💸 Ganho Total</div>
-                <div class="stat-value"><?= number_format($stats['ganho_total'] ?? 0, 0, ',', '.') ?></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">📈 Multiplicador</div>
-                <div class="stat-value">1.00x</div>
+            <div class="game-right">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">📊 Rodadas</div>
+                        <div class="stat-value"><?= $stats['total_rodadas'] ?? 0 ?></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">💸 Ganho Total</div>
+                        <div class="stat-value"><?= number_format($stats['ganho_total'] ?? 0, 0, ',', '.') ?></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">📈 Multiplicador</div>
+                        <div class="stat-value">1.00x</div>
+                    </div>
+                </div>
+                <div class="control-section">
+                    <label for="apostaInput">Valor da Aposta (1 - <?= $meu_perfil['pontos'] ?>)</label>
+                    <input type="number" id="apostaInput" class="form-control" min="1" max="<?= $meu_perfil['pontos'] ?>" value="10" placeholder="Digite o valor">
+                    <div class="control-buttons">
+                        <button class="btn-custom" id="btnPlay" onclick="iniciarRodada()">▶️ JOGAR</button>
+                        <button class="btn-custom" id="btnCashout" onclick="cashOut()" style="display: none;">💰 CASH OUT</button>
+                    </div>
+                </div>
+                <div class="crash-history">
+                    <h6 style="color: var(--accent); margin-bottom: 15px;">🎲 Últimos Crashes</h6>
+                    <div class="crash-items" id="crashHistory">
+                        <div style="text-align: center; color: rgba(196, 30, 58, 0.6);">Carregando histórico...</div>
+                    </div>
+                </div>
+                <button class="btn-back" onclick="window.location.href='../index.php'">← Voltar ao Menu</button>
             </div>
         </div>
-        <div class="canvas-wrapper">
-            <canvas id="gameCanvas" width="800" height="400"></canvas>
-        </div>
-        <div class="control-section">
-            <label for="apostaInput">Valor da Aposta (1 - <?= $meu_perfil['pontos'] ?>)</label>
-            <input type="number" id="apostaInput" class="form-control" min="1" max="<?= $meu_perfil['pontos'] ?>" value="10" placeholder="Digite o valor">
-            <div class="control-buttons">
-                <button class="btn-custom" id="btnPlay" onclick="iniciarRodada()">▶️ JOGAR</button>
-                <button class="btn-custom" id="btnCashout" onclick="cashOut()" style="display: none;">💰 CASH OUT</button>
-            </div>
-        </div>
-        <div class="crash-history">
-            <h6 style="color: var(--accent); margin-bottom: 15px;">🎲 Últimos Crashes</h6>
-            <div class="crash-items" id="crashHistory">
-                <div style="text-align: center; color: rgba(196, 30, 58, 0.6);">Carregando histórico...</div>
-            </div>
-        </div>
-        <button class="btn-back" onclick="window.location.href='../index.php'">← Voltar ao Menu</button>
     </div>
     <div class="history-table">
         <h6 style="color: var(--accent); padding: 15px; margin: 0; border-bottom: 1px solid var(--accent);">📜 Últimas Rodadas</h6>
