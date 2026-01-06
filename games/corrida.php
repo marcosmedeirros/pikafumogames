@@ -411,7 +411,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         // Gerar Tráfego com RNG determinístico baseado na seed
         traffic = [];
         const rng = createRng(seed || Date.now());
-        for(let i=0; i<50; i++) {
+        for(let i=0; i<25; i++) {
             traffic.push({
                 x: Math.floor(rng() * 5) * LANE_WIDTH + (LANE_WIDTH/2 - CAR_W/2),
                 y: -i * 600 - 800,
@@ -553,8 +553,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             if(coin.y > 900) coin.y = -trackLength + 5000 + Math.random() * 10000;
             // Colisão com player (hitbox simples)
             if (!coin.collected && 
-                playerX < coin.x + 20 && playerX + CAR_W > coin.x &&
-                600 - 50 < coin.y + 20 && 600 + CAR_H > coin.y) {
+                playerX < coin.x + 30 && playerX + CAR_W > coin.x &&
+                600 - 50 < coin.y + 30 && 600 + CAR_H > coin.y) {
                 coin.collected = true;
                 if (coinsCollected < MAX_COINS) {
                     coinsCollected++;
@@ -599,7 +599,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             if (!coin.collected && coin.y > -50 && coin.y < 850) {
                 ctx.fillStyle = '#ffd700';
                 ctx.beginPath();
-                ctx.arc(coin.x + 10, coin.y + 10, 8, 0, Math.PI * 2);
+                ctx.arc(coin.x + 10, coin.y + 10, 15, 0, Math.PI * 2);
                 ctx.fill();
                 // Borda
                 ctx.strokeStyle = '#ffb300';
