@@ -548,7 +548,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             </div>
             <div class="stat-card">
                 <div class="stat-label">💸 Ganho Total</div>
-                <div class="stat-value" style="color: #00ff00;"><?php echo $stats['ganho_total'] ?? 0; ?></div>
+                <div class="stat-value" style="color: #ff6b9d;"><?php echo $stats['ganho_total'] ?? 0; ?></div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">📈 Multiplicador Médio</div>
