@@ -333,15 +333,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         const fd = new FormData(); fd.append('acao', 'entrar_fila');
         fetch('index.php?game=corrida', { method:'POST', body:fd }).then(r=>r.json()).then(d => {
             if(d.erro) { alert(d.erro); location.reload(); return; }
+            if(!d.sala_id) { alert('Erro ao criar sala'); location.reload(); return; }
             roomId = d.sala_id;
+            console.log('Sala criada:', roomId);
             syncInterval = setInterval(syncLobby, 1500); // Polling lento no lobby
             syncLobby();
+        }).catch(err => {
+            alert('Erro de conexão: ' + err.message);
+            location.reload();
         });
     }
 
     function toggleReady() {
+        if (!roomId) {
+            alert('Erro: Sala não encontrada. Recarregue a página.');
+            return;
+        }
         const fd = new FormData(); fd.append('acao', 'ficar_pronto'); fd.append('sala_id', roomId);
-        fetch('index.php?game=corrida', { method:'POST', body:fd }).then(r=>r.json()).then(d => syncLobby());
+        fetch('index.php?game=corrida', { method:'POST', body:fd }).then(r=>r.json()).then(d => {
+            if(d.erro) alert(d.erro);
+            else syncLobby();
+        });
     }
 
     function syncLobby() {
