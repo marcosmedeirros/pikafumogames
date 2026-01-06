@@ -258,11 +258,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         <div class="info-box">
             <p>⬅️ ➡️ Use as setas ou A/D para se mover</p>
-            <p>🌟 Colete itens especiais para ganhar bônus!</p>
+            <p>🪙 Colete moedas para ganhar bônus!</p>
             <p>😈 Evite inimigos ou perca vidas!</p>
             <div class="powerup-info">
                 <div class="powerup-item">⭐ Shield (+1 vida)</div>
-                <div class="powerup-item">💎 Gema (+25 pts)</div>
+                <div class="powerup-item">🪙 Moeda (+5 pts)</div>
                 <div class="powerup-item">🔥 Speed (2x pontos)</div>
             </div>
         </div>
@@ -323,9 +323,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = false;
         });
 
-        function getEnemyCount() { return 2 + Math.floor(level / 2); }
-        function getEnemySpeed() { return 2 + (level * 0.5); }
-        function getPlatformCount() { return 6 + level; }
+        function getEnemyCount() { return 1 + Math.floor(level / 3); }
+        function getEnemySpeed() { return 1.5 + (level * 0.3); }
+        function getPlatformCount() { return 7 + Math.floor(level / 2); }
 
         function initGame() {
             platforms = [];
@@ -465,8 +465,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                     if (p.type === 'shield') {
                         lives++;
                         shieldActive = true;
-                    } else if (p.type === 'gem') {
-                        score += 25 * speedMultiplier;
+                    } else if (p.type === 'coin') {
+                        score += 5 * speedMultiplier;
                     } else if (p.type === 'speed') {
                         speedMultiplier = 2;
                         setTimeout(() => speedMultiplier = 1, 5000);
@@ -534,17 +534,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                     }
                 });
 
-                // Gerar power-ups
+                // Gerar power-ups (bem mais raro agora)
                 powerups.forEach((p, idx) => {
                     if (p.y > canvas.height) powerups.splice(idx, 1);
                 });
 
-                if (Math.random() < 0.15 && powerups.length < 3) {
-                    let types = ['shield', 'gem', 'speed'];
+                if (Math.random() < 0.08 && powerups.length < 2) {
+                    let rand = Math.random();
+                    let type;
+                    if (rand < 0.4) type = 'coin';        // 40% moedas
+                    else if (rand < 0.65) type = 'shield'; // 25% vidas
+                    else type = 'speed';                    // 35% speed
+                    
                     powerups.push({
                         x: Math.random() * (canvas.width - 20),
                         y: -20,
-                        type: types[Math.floor(Math.random() * types.length)]
+                        type: type
                     });
                 }
             }
@@ -603,7 +608,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
             // Power-ups
             powerups.forEach((p) => {
-                let icons = { shield: '⭐', gem: '💎', speed: '🔥' };
+                let icons = { shield: '⭐', coin: '🪙', speed: '🔥' };
                 ctx.font = '20px Arial';
                 ctx.fillText(icons[p.type], p.x, p.y + 15);
             });
