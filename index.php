@@ -942,14 +942,6 @@ try {
         </div>
 
         <div class="col-6 col-md-4 col-lg-3">
-            <a href="games/crypto.php" class="game-card" style="--accent: #c41e3a;">
-                <span class="game-icon">🚀</span>
-                <div class="game-title">Crypto Crash</div>
-                <div class="game-subtitle">Fuja antes de crashar</div>
-            </a>
-        </div>
-
-        <div class="col-6 col-md-4 col-lg-3">
             <a href="games/pnipnaval.php" class="game-card" style="--accent: #00bcd4;">
                 <span class="game-icon">⚔️</span>
                 <div class="game-title">Pnip Naval</div>
