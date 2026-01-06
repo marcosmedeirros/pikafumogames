@@ -159,9 +159,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             $check->execute([':sid' => $sala_id, ':uid' => $user_id]);
             
             if ($check->fetchColumn() == 0) {
-                // Paga o pote (5 moedas * numero de players) + moedas coletadas
+                // Multiplayer: Leva todo o dinheiro apostado (5 moedas * número de players)
                 $count = $pdo->query("SELECT COUNT(*) FROM corrida_participantes WHERE id_sala = $sala_id")->fetchColumn();
-                $premio = ($count * 5) + $moedas_coletadas;
+                $premio = $count * 5; // Todo o pote vai para o vencedor
                 
                 $pdo->beginTransaction();
                 $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :uid")->execute([':val' => $premio, ':uid' => $user_id]);
@@ -169,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 $pdo->commit();
             }
         } elseif ($_POST['modo'] == 'SOLO') {
-            // Pagamento SOLO (Treino) - crédita moedas coletadas
+            // Pagamento SOLO (Treino) - crédita apenas moedas coletadas
             $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :id")->execute([':val' => $moedas_coletadas, ':id' => $user_id]);
             $premio = $moedas_coletadas;
         }
@@ -244,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             <h1 class="display-3 mb-4">🏁 TURBO RACE</h1>
             <p class="text-secondary mb-4">Corra contra outros jogadores ou treine suas habilidades.</p>
             <div class="d-grid gap-3">
-                <button onclick="startSolo()" class="btn btn-outline-light btn-lg fw-bold"><i class="bi bi-person me-2"></i>TREINO SOLO (8 pts)</button>
+                <button onclick="startSolo()" class="btn btn-outline-light btn-lg fw-bold"><i class="bi bi-person me-2"></i>TREINO SOLO (Grátis)</button>
                 <button onclick="enterLobby()" class="btn-neon btn-lg"><i class="bi bi-globe me-2"></i>MULTIPLAYER (Aposta 5)</button>
             </div>
             <div class="mt-4 pt-3 border-top border-secondary">
