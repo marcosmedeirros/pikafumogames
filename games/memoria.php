@@ -118,25 +118,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             try {
                 $pdo->beginTransaction();
 
-                // Calcula streak com base nos últimos dias vencidos (inclui o dia atual)
-                $stmtStreak = $pdo->prepare("SELECT data_jogo FROM memoria_historico WHERE id_usuario = :uid AND status = 'venceu' ORDER BY data_jogo DESC LIMIT 60");
-                $stmtStreak->execute([':uid' => $user_id]);
-                $datas = $stmtStreak->fetchAll(PDO::FETCH_COLUMN) ?: [];
+                // Atualiza sequência diária usando helper centralizado (tabela usuario_sequencias_dias)
+                $novaSequencia = atualizarSequenciaDias($pdo, $user_id, 'memoria', true);
 
-                $diaRef = $hoje;
-                $novoStreak = 0;
-                foreach ($datas as $dataJogo) {
-                    if ($dataJogo === $diaRef) {
-                        $novoStreak++;
-                        $diaRef = date('Y-m-d', strtotime($diaRef . ' -1 day'));
-                    } else {
-                        break;
-                    }
-                }
-                if ($novoStreak === 0) $novoStreak = 1; // garante pelo menos o dia atual
+                $pdo->prepare("UPDATE usuarios SET pontos = pontos + :pts WHERE id = :uid")
+                    ->execute([':pts' => $pontos, ':uid' => $user_id]);
 
-                $pdo->prepare("UPDATE usuarios SET pontos = pontos + :pts, memoria_streak = :stk, memoria_last = :dt WHERE id = :uid")
-                    ->execute([':pts' => $pontos, ':stk' => $novoStreak, ':dt' => $hoje, ':uid' => $user_id]);
                 $pdo->commit();
             } catch (Exception $e) {
                 $pdo->rollBack();
