@@ -221,27 +221,6 @@ try {
     // Silencia erros
 }
 
-// 6.5. Buscar os 5 menores tempos de corrida
-$menores_tempos_corrida = [];
-
-try {
-    $stmt = $pdo->query("
-        SELECT DISTINCT 
-            cp.nome_usuario,
-            cp.tempo_final,
-            u.id as user_id
-        FROM corrida_participantes cp
-        LEFT JOIN usuarios u ON u.nome = cp.nome_usuario
-        WHERE cp.tempo_final > 0 AND cp.status = 'finalizou'
-        ORDER BY cp.tempo_final ASC
-        LIMIT 5
-    ");
-    $menores_tempos_corrida = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (Exception $e) {
-    // Silencia erros - tabela pode não existir ainda
-    $menores_tempos_corrida = [];
-}
-
 // 7. 3 Últimos Eventos Abertos (para exibir no card e no painel)
 try {
     $stmt = $pdo->query("
@@ -1206,37 +1185,6 @@ try {
             </div>
         <?php endif; ?>
     </div>
-
-    <!-- SEÇÃO: MENORES TEMPOS DE CORRIDA -->
-    <?php if(!empty($menores_tempos_corrida)): ?>
-    <h6 class="section-title" style="margin-top: 30px;"><i class="bi bi-speedometer2"></i>Menores Tempos - Corrida Neon</h6>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-        <?php foreach($menores_tempos_corrida as $idx => $tempo): ?>
-            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                <div style="font-size: 2.5em; margin-bottom: 10px;">
-                    <?php 
-                        if($idx == 0) echo '🥇';
-                        elseif($idx == 1) echo '🥈';
-                        elseif($idx == 2) echo '🥉';
-                        else echo '#' . ($idx + 1);
-                    ?>
-                </div>
-                <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Posição #<?= $idx + 1 ?></div>
-                <?php if($tempo['user_id']): ?>
-                    <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
-                        <?php 
-                            $avatar = obterCustomizacaoAvatar($pdo, $tempo['user_id']);
-                            echo renderizarAvatarSVG($avatar, 64);
-                        ?>
-                    </div>
-                <?php endif; ?>
-                <div style="font-weight: bold; margin: 10px 0;"><?= htmlspecialchars($tempo['nome_usuario']) ?></div>
-                <div style="font-size: 0.9em; color: #ff1744; margin-top: 8px; font-weight: bold;"><?= number_format($tempo['tempo_final'], 2, ',', '.') ?>s</div>
-            </div>
-        <?php endforeach; ?>
-    </div>
-    <?php endif; ?>
 
 </div>
 
