@@ -1,5 +1,5 @@
 <?php
-// mario.php - MARIO JUMP (Protótipo)
+// mario.php - MARIO JUMP (Jogo Completo com Vidas e Dificuldade)
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 session_start();
@@ -111,6 +111,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             font-weight: bold;
         }
 
+        .lives-display {
+            font-size: 1.5em;
+            margin-top: 5px;
+        }
+
+        .life-icon {
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .level-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
         .game-canvas-container {
             background: linear-gradient(180deg, #87ceeb 0%, #e0f6ff 100%);
             border: 4px solid #333;
@@ -178,11 +200,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             text-align: center;
             margin-bottom: 15px;
             backdrop-filter: blur(10px);
+            font-size: 0.9em;
         }
 
         .info-box p {
-            margin: 5px 0;
-            font-size: 0.95em;
+            margin: 3px 0;
+            font-size: 0.85em;
+        }
+
+        .powerup-info {
+            display: flex;
+            justify-content: space-around;
+            gap: 5px;
+            margin-top: 10px;
+            font-size: 0.8em;
+        }
+
+        .powerup-item {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            padding: 5px;
+            border-radius: 5px;
         }
 
         @media (max-width: 600px) {
@@ -205,22 +243,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 <div class="value" id="currentScore">0</div>
             </div>
             <div class="stat-box">
-                <h3>Seu Recorde</h3>
-                <div class="value" id="recordScore"><?php echo $recorde; ?></div>
+                <h3>Nível</h3>
+                <div class="value" id="levelDisplay">1</div>
             </div>
             <div class="stat-box">
-                <h3>Jogador</h3>
-                <div class="value" style="font-size: 1.2em;"><?php echo htmlspecialchars(substr($meu_perfil['nome'], 0, 8)); ?></div>
+                <h3>Vidas</h3>
+                <div class="value" id="livesDisplay">❤️ ❤️ ❤️</div>
+            </div>
+            <div class="stat-box">
+                <h3>Recorde</h3>
+                <div class="value" id="recordScore"><?php echo $recorde; ?></div>
             </div>
         </div>
 
         <div class="info-box">
             <p>⬅️ ➡️ Use as setas ou A/D para se mover</p>
-            <p>Pule nos inimigos para ganhar pontos!</p>
+            <p>🌟 Colete itens especiais para ganhar bônus!</p>
+            <p>😈 Evite inimigos ou perca vidas!</p>
+            <div class="powerup-info">
+                <div class="powerup-item">⭐ Shield (+1 vida)</div>
+                <div class="powerup-item">💎 Gema (+25 pts)</div>
+                <div class="powerup-item">🔥 Speed (2x pontos)</div>
+            </div>
         </div>
 
         <div class="game-canvas-container">
             <canvas id="gameCanvas" width="400" height="600"></canvas>
+            <div class="level-display" id="levelInGame">Nível: 1</div>
         </div>
 
         <div class="controls">
@@ -233,34 +282,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Variáveis do jogo
+        // VARIÁVEIS DO JOGO
         let gameRunning = false;
         let gameOver = false;
         let score = 0;
+        let level = 1;
+        let lives = 3;
         let gameStarted = false;
+        let distanceTraveled = 0;
+        let speedMultiplier = 1;
+        let shieldActive = false;
 
         // Mario
         const mario = {
-            x: canvas.width / 2,
-            y: canvas.height - 80,
+            x: canvas.width / 2 - 15,
+            y: canvas.height - 100,
             width: 30,
             height: 40,
             velocityY: 0,
-            velocityX: 0,
-            jumping: false,
             speed: 5,
             jumpPower: 12
         };
 
-        // Plataformas
+        // Arrays de objetos
         let platforms = [];
         let enemies = [];
+        let powerups = [];
 
         // Controles
-        const keys = {
-            left: false,
-            right: false
-        };
+        const keys = { left: false, right: false };
 
         // Event Listeners
         window.addEventListener('keydown', (e) => {
@@ -273,46 +323,69 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = false;
         });
 
-        // Inicializar plataformas
-        function initPlatforms() {
+        function getEnemyCount() { return 2 + Math.floor(level / 2); }
+        function getEnemySpeed() { return 2 + (level * 0.5); }
+        function getPlatformCount() { return 6 + level; }
+
+        function initGame() {
             platforms = [];
+            enemies = [];
+            powerups = [];
+            distanceTraveled = 0;
+            speedMultiplier = 1;
             
-            // CHÃO permanente no início
+            // CHÃO permanente
             platforms.push({
-                x: 0,
-                y: canvas.height - 50,
-                width: canvas.width,
-                height: 50,
-                color: '#8B4513',
-                isFloor: true
+                x: 0, y: canvas.height - 50,
+                width: canvas.width, height: 50,
+                color: '#8B4513', isFloor: true
             });
             
-            // Plataformas flutuantes
-            for (let i = 0; i < 6; i++) {
+            // Plataformas iniciais
+            for (let i = 0; i < getPlatformCount(); i++) {
+                let platformColor = '#ff6b9d';
+                if (Math.random() < 0.2) platformColor = '#FFD700'; // Platform dourada (mais pontos)
+                if (Math.random() < 0.1) platformColor = '#8B008B'; // Platform roxa (trêmula)
+                
                 platforms.push({
                     x: Math.random() * (canvas.width - 60),
-                    y: canvas.height - 150 - (i * 100),
+                    y: canvas.height - 150 - (i * 80),
                     width: 60,
                     height: 12,
-                    color: '#ff6b9d',
-                    isFloor: false
+                    color: platformColor,
+                    isFloor: false,
+                    tremble: platformColor === '#8B008B',
+                    trembleAmount: 0
                 });
             }
-            mario.y = canvas.height - 100;
-        }
-
-        // Inicializar inimigos
-        function initEnemies() {
-            enemies = [];
-            for (let i = 0; i < 3; i++) {
+            
+            // Inimigos
+            for (let i = 0; i < getEnemyCount(); i++) {
                 enemies.push({
                     x: Math.random() * (canvas.width - 30),
-                    y: 150 + i * 100,
+                    y: 200 + i * 120,
                     width: 30,
                     height: 30,
-                    velocityX: (Math.random() - 0.5) * 4
+                    velocityX: (Math.random() - 0.5) * getEnemySpeed(),
+                    type: Math.random() < 0.3 ? 'spike' : 'normal'
                 });
             }
+            
+            mario.x = canvas.width / 2 - 15;
+            mario.y = canvas.height - 100;
+            mario.velocityY = 0;
+        }
+
+        function updateLevel() {
+            level = 1 + Math.floor(distanceTraveled / 1000);
+            document.getElementById('levelDisplay').textContent = level;
+            document.getElementById('levelInGame').textContent = 'Nível: ' + level;
+        }
+
+        function updateLivesDisplay() {
+            let hearts = '';
+            for (let i = 0; i < lives; i++) hearts += '❤️ ';
+            document.getElementById('livesDisplay').textContent = hearts || '💀';
         }
 
         function startGame() {
@@ -321,11 +394,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 gameRunning = true;
                 gameOver = false;
                 score = 0;
-                mario.y = canvas.height - 80;
-                mario.velocityY = 0;
-                mario.velocityX = 0;
-                initPlatforms();
-                initEnemies();
+                level = 1;
+                lives = 3;
+                initGame();
+                updateLivesDisplay();
                 document.getElementById('startBtn').disabled = true;
                 document.getElementById('startBtn').textContent = 'Jogo em andamento...';
                 gameLoop();
@@ -335,7 +407,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         function gameLoop() {
             update();
             draw();
-
             if (gameRunning && !gameOver) {
                 requestAnimationFrame(gameLoop);
             }
@@ -344,124 +415,208 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         function update() {
             if (!gameRunning) return;
 
-            // Movimento horizontal
-            if (keys.left && mario.x > 0) {
-                mario.x -= mario.speed;
-            }
-            if (keys.right && mario.x < canvas.width - mario.width) {
-                mario.x += mario.speed;
-            }
+            // Movimento
+            if (keys.left && mario.x > 0) mario.x -= mario.speed;
+            if (keys.right && mario.x < canvas.width - mario.width) mario.x += mario.speed;
 
             // Gravidade
             mario.velocityY += 0.4;
             mario.y += mario.velocityY;
 
             // Colisão com plataformas
-            platforms.forEach((platform) => {
+            platforms.forEach((p) => {
                 if (mario.velocityY > 0 &&
-                    mario.y + mario.height >= platform.y &&
-                    mario.y + mario.height <= platform.y + platform.height + 10 &&
-                    mario.x + mario.width > platform.x &&
-                    mario.x < platform.x + platform.width) {
+                    mario.y + mario.height >= p.y &&
+                    mario.y + mario.height <= p.y + p.height + 10 &&
+                    mario.x + mario.width > p.x &&
+                    mario.x < p.x + p.width) {
                     mario.velocityY = -mario.jumpPower;
-                    if (!platform.isFloor) { // Só conta pontos em plataformas, não no chão
-                        score++;
+                    if (!p.isFloor) {
+                        let points = 1;
+                        if (p.color === '#FFD700') points = 5;
+                        score += points * speedMultiplier;
                         document.getElementById('currentScore').textContent = score;
                     }
                 }
             });
 
-            // Colisão com inimigos
-            enemies.forEach((enemy) => {
-                if (mario.velocityY > 0 &&
-                    mario.y + mario.height >= enemy.y &&
-                    mario.y + mario.height <= enemy.y + enemy.height + 10 &&
-                    mario.x + mario.width > enemy.x &&
-                    mario.x < enemy.x + enemy.width) {
-                    mario.velocityY = -mario.jumpPower;
-                    score += 5;
+            // Colisão com inimigos (dano)
+            enemies.forEach((e) => {
+                if (mario.x < e.x + e.width && mario.x + mario.width > e.x &&
+                    mario.y < e.y + e.height && mario.y + mario.height > e.y) {
+                    if (shieldActive) {
+                        shieldActive = false;
+                        e.x = Math.random() * (canvas.width - 30);
+                        e.y = 100;
+                    } else {
+                        lives--;
+                        updateLivesDisplay();
+                        mario.y = canvas.height - 100;
+                        mario.velocityY = 0;
+                        if (lives <= 0) endGame();
+                    }
+                }
+            });
+
+            // Colisão com power-ups
+            powerups.forEach((p, idx) => {
+                if (mario.x < p.x + 20 && mario.x + mario.width > p.x &&
+                    mario.y < p.y + 20 && mario.y + mario.height > p.y) {
+                    if (p.type === 'shield') {
+                        lives++;
+                        shieldActive = true;
+                    } else if (p.type === 'gem') {
+                        score += 25 * speedMultiplier;
+                    } else if (p.type === 'speed') {
+                        speedMultiplier = 2;
+                        setTimeout(() => speedMultiplier = 1, 5000);
+                    }
+                    powerups.splice(idx, 1);
                     document.getElementById('currentScore').textContent = score;
-                    enemy.x = Math.random() * (canvas.width - 30);
-                    enemy.y = 100;
+                    updateLivesDisplay();
                 }
             });
 
             // Movimento dos inimigos
-            enemies.forEach((enemy) => {
-                enemy.x += enemy.velocityX;
-                if (enemy.x < 0 || enemy.x > canvas.width - 30) {
-                    enemy.velocityX *= -1;
+            enemies.forEach((e) => {
+                e.x += e.velocityX;
+                if (e.x < 0 || e.x > canvas.width - 30) e.velocityX *= -1;
+            });
+
+            // Plataformas tremendo
+            platforms.forEach((p) => {
+                if (p.tremble) {
+                    p.trembleAmount += 0.1;
                 }
             });
 
             // Game Over
             if (mario.y > canvas.height) {
-                endGame();
+                lives--;
+                updateLivesDisplay();
+                mario.y = canvas.height - 100;
+                mario.velocityY = 0;
+                if (lives <= 0) endGame();
             }
 
-            // Mover câmera
+            // Câmera e geração
             if (mario.y < canvas.height / 3) {
                 let diff = canvas.height / 3 - mario.y;
+                distanceTraveled += diff;
                 mario.y = canvas.height / 3;
+                
                 platforms.forEach(p => p.y += diff);
                 enemies.forEach(e => e.y += diff);
+                powerups.forEach(p => p.y += diff);
+                
+                updateLevel();
 
-                // Gerar novas plataformas (exceto o chão)
-                platforms.forEach((platform) => {
-                    if (platform.isFloor) return; // Não mexer no chão
-                    
-                    if (platform.y > canvas.height) {
-                        platform.y = -10;
-                        platform.x = Math.random() * (canvas.width - 60);
+                // Gerar novas plataformas
+                platforms.forEach((p) => {
+                    if (p.isFloor) return;
+                    if (p.y > canvas.height) {
+                        p.y = -10;
+                        p.x = Math.random() * (canvas.width - 60);
+                        let rand = Math.random();
+                        if (rand < 0.15) p.color = '#FFD700';
+                        else if (rand < 0.25) p.color = '#8B008B';
+                        else p.color = '#ff6b9d';
+                        p.tremble = p.color === '#8B008B';
                     }
                 });
 
-                enemies.forEach((enemy) => {
-                    if (enemy.y > canvas.height) {
-                        enemy.y = -30;
-                        enemy.x = Math.random() * (canvas.width - 30);
+                // Gerar novos inimigos
+                enemies.forEach((e) => {
+                    if (e.y > canvas.height) {
+                        e.y = -30;
+                        e.x = Math.random() * (canvas.width - 30);
+                        e.velocityX = (Math.random() - 0.5) * getEnemySpeed();
                     }
                 });
+
+                // Gerar power-ups
+                powerups.forEach((p, idx) => {
+                    if (p.y > canvas.height) powerups.splice(idx, 1);
+                });
+
+                if (Math.random() < 0.15 && powerups.length < 3) {
+                    let types = ['shield', 'gem', 'speed'];
+                    powerups.push({
+                        x: Math.random() * (canvas.width - 20),
+                        y: -20,
+                        type: types[Math.floor(Math.random() * types.length)]
+                    });
+                }
             }
         }
 
         function draw() {
-            // Fundo
-            ctx.fillStyle = '#87ceeb';
+            // Fundo gradiente
+            let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87ceeb');
+            gradient.addColorStop(1, '#e0f6ff');
+            ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Nuvens
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.beginPath();
             ctx.arc(80, 50, 30, 0, Math.PI * 2);
             ctx.arc(120, 40, 25, 0, Math.PI * 2);
+            ctx.arc(300, 80, 35, 0, Math.PI * 2);
             ctx.fill();
 
             // Plataformas
-            platforms.forEach((platform) => {
-                ctx.fillStyle = platform.color;
-                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-                ctx.strokeStyle = '#ff3366';
+            platforms.forEach((p) => {
+                let offsetX = p.tremble ? Math.sin(p.trembleAmount) * 3 : 0;
+                ctx.fillStyle = p.color;
+                ctx.fillRect(p.x + offsetX, p.y, p.width, p.height);
+                ctx.strokeStyle = p.isFloor ? '#654321' : '#ff1744';
                 ctx.lineWidth = 2;
-                ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+                ctx.strokeRect(p.x + offsetX, p.y, p.width, p.height);
             });
 
             // Inimigos
-            enemies.forEach((enemy) => {
-                ctx.fillStyle = '#ff6b6b';
+            enemies.forEach((e) => {
+                ctx.fillStyle = e.type === 'spike' ? '#ff0000' : '#ff6b6b';
                 ctx.beginPath();
-                ctx.arc(enemy.x + 15, enemy.y + 15, 15, 0, Math.PI * 2);
+                ctx.arc(e.x + 15, e.y + 15, 15, 0, Math.PI * 2);
                 ctx.fill();
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.arc(enemy.x + 10, enemy.y + 10, 5, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.beginPath();
-                ctx.arc(enemy.x + 20, enemy.y + 10, 5, 0, Math.PI * 2);
-                ctx.fill();
+                
+                if (e.type === 'spike') {
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.moveTo(e.x + 15, e.y);
+                    ctx.lineTo(e.x + 8, e.y + 15);
+                    ctx.lineTo(e.x + 22, e.y + 15);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(e.x + 10, e.y + 10, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(e.x + 20, e.y + 10, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             });
 
-            // Mario
+            // Power-ups
+            powerups.forEach((p) => {
+                let icons = { shield: '⭐', gem: '💎', speed: '🔥' };
+                ctx.font = '20px Arial';
+                ctx.fillText(icons[p.type], p.x, p.y + 15);
+            });
+
+            // Mario com escudo
+            if (shieldActive) {
+                ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(mario.x + 15, mario.y + 20, 25, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
             ctx.fillStyle = '#ff3333';
             ctx.fillRect(mario.x, mario.y, mario.width, mario.height);
             ctx.fillStyle = '#ffd700';
@@ -474,10 +629,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             ctx.arc(mario.x + 20, mario.y + 8, 3, 0, Math.PI * 2);
             ctx.fill();
 
-            // Score
+            // Texto na tela
             ctx.fillStyle = '#000';
-            ctx.font = 'bold 16px Arial';
-            ctx.fillText('Score: ' + score, 10, 30);
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('Score: ' + score, 10, 25);
+            ctx.fillText('Nível: ' + level, 10, 45);
         }
 
         function endGame() {
@@ -487,7 +643,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             document.getElementById('startBtn').textContent = '🔄 Jogar Novamente';
             gameStarted = false;
 
-            // Salvar score
             if (score > 0) {
                 fetch('mario.php', {
                     method: 'POST',
@@ -496,10 +651,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 });
             }
 
-            alert('Game Over! Score: ' + score);
+            alert('Game Over!\nScore: ' + score + '\nNível: ' + level);
         }
 
-        // Desenho inicial
         draw();
         document.getElementById('startBtn').focus();
     </script>
