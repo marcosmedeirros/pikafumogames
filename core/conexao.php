@@ -4,7 +4,7 @@
 $host = 'localhost';
 $dbname = 'u289267434_lumacio';
 $user = 'u289267434_macoinhas';
-$pass = Zonete@13';
+$pass = 'Zonete@13';
 
 try {
     // Conexão com PDO
