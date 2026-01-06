@@ -358,7 +358,7 @@ function desenharGrafico() {
     ctx.fillText('💥 CRASH: ' + crashPoint.toFixed(2) + 'x', padding + 15, crashY - 15);
     ctx.shadowColor = gameState === 'crashed' ? 'rgba(139, 21, 40, 0.8)' : 'rgba(139, 21, 40, 0.6)';
     ctx.shadowBlur = 10;
-    ctx.strokeStyle = gameState === 'crashed' ? '#ff4444' : '#8b1528';
+    ctx.strokeStyle = gameState === 'crashed' ? '#fff' : '#8b1528';
     ctx.lineWidth = 4;
     ctx.beginPath();
     const steps = Math.min(animationFrame, 150);
@@ -391,14 +391,14 @@ function desenharGrafico() {
     ctx.fillText('🚀', rocketX, rocketY);
     ctx.shadowColor = 'transparent';
     ctx.textAlign = 'left';
-    ctx.fillStyle = gameState === 'crashed' ? '#ff4444' : '#8b1528';
+    ctx.fillStyle = gameState === 'crashed' ? '#fff' : '#8b1528';
     ctx.font = 'bold 18px Courier New';
     ctx.fillText('📈 Multiplicador: ' + currentMultiplier.toFixed(2) + 'x', padding, 40);
     if (gameState === 'crashed') {
-        ctx.fillStyle = 'rgba(139, 21, 40, 0.95)';
+        ctx.fillStyle = '#fff';
         ctx.font = 'bold 40px Courier New';
         ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(139, 21, 40, 0.9)';
+    ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
         ctx.shadowBlur = 20;
         ctx.fillText('💥 CRASHED! 💥', gameWidth / 2, gameHeight / 2);
         ctx.shadowColor = 'transparent';
