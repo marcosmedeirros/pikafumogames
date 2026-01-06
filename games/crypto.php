@@ -164,12 +164,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <style>
         :root { --accent: #8b1528; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Courier New', monospace; background-color: #000; }
+        body { font-family: 'Courier New', monospace; background-color: #000; color: #fff; }
+        h1, h2, h3, h4, h5, h6 { color: #fff; }
         .navbar-custom { background: #000; border-bottom: 1px solid #333; padding: 15px 25px; }
         .navbar-custom .brand-name { font-size: 1.8em; font-weight: bold; color: #fff; text-decoration: none; text-shadow: none; }
         .saldo-badge { background: rgba(46, 213, 115, 0.15); border: 1px solid #2ed573; padding: 8px 15px; border-radius: 6px; color: #2ed573; font-weight: bold; }
         .container-main { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
-        .section-title { color: var(--accent); font-size: 1.3em; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(139, 21, 40, 0.3); }
+        .section-title { color: #fff; font-size: 1.3em; font-weight: bold; margin-bottom: 20px; text-shadow: none; }
         .game-container { background: linear-gradient(135deg, rgba(139, 21, 40, 0.05) 0%, rgba(139, 21, 40, 0.02) 100%); border: 2px solid var(--accent); border-radius: 12px; padding: 25px; margin-bottom: 30px; display: flex; flex-direction: column; gap: 20px; }
         .game-title { color: var(--accent); font-size: 1.8em; margin-bottom: 0; text-align: center; font-weight: bold; text-shadow: 0 0 15px rgba(139, 21, 40, 0.4); width: 100%; }
         .game-columns { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; align-items: start; }
@@ -179,10 +180,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         canvas { display: block; width: 100%; height: auto; background: #000; max-height: 600px; aspect-ratio: 800 / 400; }
         .stats-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 0; }
         .stat-card { background: rgba(139, 21, 40, 0.1); border: 1px solid var(--accent); padding: 12px; border-radius: 8px; text-align: center; }
-        .stat-label { color: rgba(139, 21, 40, 0.8); font-size: 0.8em; margin-bottom: 5px; }
-        .stat-value { color: var(--accent); font-size: 1.4em; font-weight: bold; }
+        .stat-label { color: #fff; font-size: 0.8em; margin-bottom: 5px; }
+        .stat-value { color: #fff; font-size: 1.4em; font-weight: bold; }
         .control-section { background: rgba(139, 21, 40, 0.1); border: 1px solid var(--accent); border-radius: 8px; padding: 15px; margin-bottom: 0; }
-        .control-section label { color: var(--accent); font-weight: bold; margin-bottom: 8px; display: block; font-size: 0.9em; }
+        .control-section label { color: #fff; font-weight: bold; margin-bottom: 8px; display: block; font-size: 0.9em; }
         .form-control { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(139, 21, 40, 0.5); color: #fff; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 0.95em; }
         .form-control:focus { background: rgba(255, 255, 255, 0.08); border-color: var(--accent); color: #fff; box-shadow: 0 0 10px rgba(139, 21, 40, 0.3); }
         .btn-custom { background: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: all 0.3s; margin-right: 0; margin-bottom: 8px; font-size: 0.95em; }
@@ -194,15 +195,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         .message.show { display: block; }
         .message.success { background: rgba(46, 213, 115, 0.1); border-color: #2ed573; color: #2ed573; }
         .message.error { background: rgba(255, 68, 68, 0.1); border-color: #ff4444; color: #ff4444; }
-        .message.crash { background: rgba(139, 21, 40, 0.2); border-color: var(--accent); color: var(--accent); }
+        .message.crash { background: rgba(139, 21, 40, 0.2); border-color: var(--accent); color: #fff; }
         .crash-history { background: rgba(139, 21, 40, 0.1); border: 1px solid var(--accent); border-radius: 8px; padding: 15px; margin-bottom: 0; }
         .crash-items { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-        .crash-item { background: rgba(139, 21, 40, 0.2); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; color: var(--accent); font-weight: bold; transition: all 0.3s; font-size: 0.9em; }
+        .crash-item { background: rgba(139, 21, 40, 0.2); border: 1px solid var(--accent); padding: 8px 12px; border-radius: 6px; color: #fff; font-weight: bold; transition: all 0.3s; font-size: 0.9em; }
         .crash-item:hover { background: rgba(139, 21, 40, 0.4); box-shadow: 0 0 10px rgba(139, 21, 40, 0.5); }
         .history-table { width: 100%; background: rgba(139, 21, 40, 0.05); border: 1px solid var(--accent); border-radius: 8px; overflow: hidden; margin-top: 20px; }
         .history-table table { width: 100%; border-collapse: collapse; }
-        .history-table th { background: rgba(139, 21, 40, 0.2); color: var(--accent); padding: 12px; text-align: left; border-bottom: 1px solid var(--accent); font-weight: bold; }
-        .history-table td { padding: 10px 12px; border-bottom: 1px solid rgba(139, 21, 40, 0.2); color: rgba(255, 255, 255, 0.8); }
+        .history-table th { background: rgba(139, 21, 40, 0.2); color: #fff; padding: 12px; text-align: left; border-bottom: 1px solid var(--accent); font-weight: bold; }
+        .history-table td { padding: 10px 12px; border-bottom: 1px solid rgba(139, 21, 40, 0.2); color: #fff; }
         .history-table tr:hover { background: rgba(139, 21, 40, 0.1); }
         .control-buttons { display: flex; gap: 8px; flex-direction: column; align-items: stretch; }
         .control-buttons .btn-custom { flex: 1; min-width: auto; margin-right: 0; }
