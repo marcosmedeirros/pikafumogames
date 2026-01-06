@@ -226,8 +226,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         <span class="saldo-badge">
             <i class="bi bi-coin me-1"></i><?= number_format($meu_perfil['pontos'], 0, ',', '.') ?> pts
         </span>
-        <a href="../auth/logout.php" class="btn btn-sm btn-outline-danger border-0">
-            <i class="bi bi-box-arrow-right"></i>
+        <a href="../index.php" class="btn btn-sm btn-outline-secondary border-0" title="Voltar ao Menu">
+            <i class="bi bi-house-fill"></i>
         </a>
     </div>
 </div>
