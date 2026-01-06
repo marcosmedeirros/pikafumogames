@@ -266,8 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             <h1 class="display-3 mb-4">🏁 TURBO RACE</h1>
             <p class="text-secondary mb-4">Corra contra outros jogadores ou treine suas habilidades.</p>
             <div class="d-grid gap-3">
-                <button onclick="startSolo()" class="btn btn-outline-light btn-lg fw-bold"><i class="bi bi-person me-2"></i>TREINO SOLO (Grátis)</button>
-                <button onclick="enterLobby()" class="btn-neon btn-lg"><i class="bi bi-globe me-2"></i>MULTIPLAYER (Aposta 5)</button>
+                <button onclick="comingSoon()" class="btn btn-secondary btn-lg fw-bold" disabled><i class="bi bi-tools me-2"></i>MULTIPLAYER (Em Desenvolvimento)</button>
             </div>
             <div class="mt-4 pt-3 border-top border-secondary">
                 <a href="../index.php" class="text-white-50 text-decoration-none small"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
@@ -427,6 +426,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     }
 
     // --- ENGINE DE CORRIDA ---
+
+    function comingSoon() {
+        alert('🚀 Em Desenvolvimento! Volta em breve!');
+    }
 
     function startSolo() {
         gameMode = 'SOLO';
