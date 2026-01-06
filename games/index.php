@@ -53,6 +53,10 @@ $games_disponiveis = [
     'mario' => [
         'titulo' => '🍄 Mario Jump',
         'arquivo' => 'mario.php'
+    ],
+    'crypto' => [
+        'titulo' => '🚀 Crypto Crash',
+        'arquivo' => 'crypto.php'
     ]
     
 ];
