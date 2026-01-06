@@ -189,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         .btn-custom:hover { background: #6b0f20; box-shadow: 0 0 15px rgba(139, 21, 40, 0.6); transform: scale(1.05); }
         .btn-custom:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-back { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: all 0.3s; font-weight: bold; display: block; width: 100%; margin-top: 0; font-size: 0.9em; }
-        .btn-back:hover { background: rgba(196, 30, 58, 0.2); }
+    .btn-back:hover { background: rgba(139, 21, 40, 0.18); }
         .message { padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; border: 1px solid; }
         .message.show { display: block; }
         .message.success { background: rgba(46, 213, 115, 0.1); border-color: #2ed573; color: #2ed573; }
@@ -235,11 +235,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <div id="mensagem" class="message"></div>
     <h5 class="section-title"><i class="bi bi-rocket-fill"></i> 🚀 Crypto Crash</h5>
     <div class="game-container">
-        <div class="game-title">🚀 O FOGUETE</div>
+        <!-- canvas + stats side-by-side (controls and history moved to full-width rows below) -->
         <div class="game-columns">
             <div class="game-left">
                 <div class="canvas-wrapper">
-                    <canvas id="gameCanvas" width="800" height="400"></canvas>
+                    <canvas id="gameCanvas" width="1200" height="600"></canvas>
                 </div>
             </div>
             <div class="game-right">
@@ -257,22 +257,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                         <div class="stat-value">1.00x</div>
                     </div>
                 </div>
-                <div class="control-section">
-                    <label for="apostaInput">Valor da Aposta (1 - <?= $meu_perfil['pontos'] ?>)</label>
-                    <input type="number" id="apostaInput" class="form-control" min="1" max="<?= $meu_perfil['pontos'] ?>" value="10" placeholder="Digite o valor">
-                    <div class="control-buttons">
-                        <button class="btn-custom" id="btnPlay" onclick="iniciarRodada()">▶️ JOGAR</button>
-                        <button class="btn-custom" id="btnCashout" onclick="cashOut()" style="display: none;">💰 CASH OUT</button>
-                    </div>
-                </div>
-                <div class="crash-history">
-                    <h6 style="color: var(--accent); margin-bottom: 15px;">🎲 Últimos Crashes</h6>
-                    <div class="crash-items" id="crashHistory">
-                        <div style="text-align: center; color: rgba(196, 30, 58, 0.6);">Carregando histórico...</div>
-                    </div>
-                </div>
-                <button class="btn-back" onclick="window.location.href='../index.php'">← Voltar ao Menu</button>
             </div>
+        </div>
+
+        <!-- Full-width: Valor da Aposta (linha inteira) -->
+        <div class="control-section" style="width:100%; margin-top:10px;">
+            <label for="apostaInput">Valor da Aposta (1 - <?= $meu_perfil['pontos'] ?>)</label>
+            <input type="number" id="apostaInput" class="form-control" min="1" max="<?= $meu_perfil['pontos'] ?>" value="10" placeholder="Digite o valor">
+            <div class="control-buttons">
+                <button class="btn-custom" id="btnPlay" onclick="iniciarRodada()">▶️ JOGAR</button>
+                <button class="btn-custom" id="btnCashout" onclick="cashOut()" style="display: none;">💰 CASH OUT</button>
+            </div>
+        </div>
+
+        <!-- Full-width: Últimos Crashes (linha inteira) -->
+        <div class="crash-history" style="width:100%; margin-top:10px;">
+            <h6 style="color: var(--accent); margin-bottom: 15px;">🎲 Últimos Crashes</h6>
+            <div class="crash-items" id="crashHistory">
+                <div style="text-align: center; color: rgba(139, 21, 40, 0.6);">Carregando histórico...</div>
+            </div>
+        </div>
+
+        <!-- Full-width: botão voltar -->
+        <div style="width:100%; margin-top:12px;">
+            <button class="btn-back" onclick="window.location.href='../index.php'">← Voltar ao Menu</button>
         </div>
     </div>
 </div>
@@ -292,7 +300,7 @@ const padding = 50;
 function desenharTela() {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, gameWidth, gameHeight);
-    ctx.strokeStyle = 'rgba(196, 30, 58, 0.1)';
+    ctx.strokeStyle = 'rgba(139, 21, 40, 0.08)';
     ctx.lineWidth = 1;
     for (let i = 0; i < gameWidth; i += 50) {
         ctx.beginPath();
@@ -306,7 +314,7 @@ function desenharTela() {
         ctx.lineTo(gameWidth, i);
         ctx.stroke();
     }
-    ctx.strokeStyle = '#c41e3a';
+    ctx.strokeStyle = '#8b1528';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(padding, gameHeight - padding);
@@ -316,12 +324,12 @@ function desenharTela() {
     ctx.moveTo(padding, padding);
     ctx.lineTo(padding, gameHeight - padding);
     ctx.stroke();
-    ctx.fillStyle = '#c41e3a';
+    ctx.fillStyle = '#8b1528';
     ctx.font = '12px Courier New';
     ctx.fillText('TEMPO', gameWidth - 100, gameHeight - 20);
     ctx.fillText('MULTIPLICADOR', 10, 20);
     if (gameState === 'idle') {
-        ctx.fillStyle = 'rgba(196, 30, 58, 0.6)';
+        ctx.fillStyle = 'rgba(139, 21, 40, 0.55)';
         ctx.font = 'bold 24px Courier New';
         ctx.textAlign = 'center';
         ctx.fillText('Clique em JOGAR para começar', gameWidth / 2, gameHeight / 2);
@@ -336,7 +344,7 @@ function desenharGrafico() {
     const maxY = gameHeight - padding;
     const startX = padding;
     const startY = maxY;
-    ctx.strokeStyle = 'rgba(196, 30, 58, 0.4)';
+    ctx.strokeStyle = 'rgba(139, 21, 40, 0.35)';
     ctx.lineWidth = 2;
     ctx.setLineDash([5, 5]);
     ctx.beginPath();
@@ -345,12 +353,12 @@ function desenharGrafico() {
     ctx.lineTo(maxX, crashY);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(196, 30, 58, 0.3)';
+    ctx.fillStyle = 'rgba(139, 21, 40, 0.25)';
     ctx.font = 'bold 14px Courier New';
     ctx.fillText('💥 CRASH: ' + crashPoint.toFixed(2) + 'x', padding + 15, crashY - 15);
-    ctx.shadowColor = gameState === 'crashed' ? 'rgba(196, 30, 58, 0.8)' : 'rgba(196, 30, 58, 0.6)';
+    ctx.shadowColor = gameState === 'crashed' ? 'rgba(139, 21, 40, 0.8)' : 'rgba(139, 21, 40, 0.6)';
     ctx.shadowBlur = 10;
-    ctx.strokeStyle = gameState === 'crashed' ? '#ff4444' : '#c41e3a';
+    ctx.strokeStyle = gameState === 'crashed' ? '#ff4444' : '#8b1528';
     ctx.lineWidth = 4;
     ctx.beginPath();
     const steps = Math.min(animationFrame, 150);
@@ -369,7 +377,7 @@ function desenharGrafico() {
     const progress = Math.pow(t, 1.2);
     const rocketY = startY - (currentMultiplier - 1) * (maxY - padding) * progress * 0.9;
     if (gameState === 'playing') {
-        ctx.fillStyle = `rgba(196, ${Math.random() * 100 + 100}, 0, 0.6)`;
+        ctx.fillStyle = `rgba(139, 21, 40, 0.55)`;
         ctx.beginPath();
         ctx.moveTo(rocketX, rocketY + 15);
         ctx.lineTo(rocketX - 5 + Math.random() * 10, rocketY + 30 + Math.random() * 10);
@@ -378,19 +386,19 @@ function desenharGrafico() {
     }
     ctx.font = 'bold 35px Arial';
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(196, 30, 58, 0.8)';
+    ctx.shadowColor = 'rgba(139, 21, 40, 0.75)';
     ctx.shadowBlur = 15;
     ctx.fillText('🚀', rocketX, rocketY);
     ctx.shadowColor = 'transparent';
     ctx.textAlign = 'left';
-    ctx.fillStyle = gameState === 'crashed' ? '#ff4444' : '#c41e3a';
+    ctx.fillStyle = gameState === 'crashed' ? '#ff4444' : '#8b1528';
     ctx.font = 'bold 18px Courier New';
     ctx.fillText('📈 Multiplicador: ' + currentMultiplier.toFixed(2) + 'x', padding, 40);
     if (gameState === 'crashed') {
-        ctx.fillStyle = 'rgba(196, 30, 58, 0.95)';
+        ctx.fillStyle = 'rgba(139, 21, 40, 0.95)';
         ctx.font = 'bold 40px Courier New';
         ctx.textAlign = 'center';
-        ctx.shadowColor = 'rgba(196, 30, 58, 0.9)';
+    ctx.shadowColor = 'rgba(139, 21, 40, 0.9)';
         ctx.shadowBlur = 20;
         ctx.fillText('💥 CRASHED! 💥', gameWidth / 2, gameHeight / 2);
         ctx.shadowColor = 'transparent';
@@ -528,7 +536,7 @@ function carregarHistoricoCrashes() {
             const items = data.crashes.map(crash => `<div class="crash-item">${crash}x</div>`).join('');
             container.innerHTML = items;
         } else {
-            container.innerHTML = '<div style="text-align: center; color: rgba(196, 30, 58, 0.6);">Nenhum crash registrado ainda</div>';
+            container.innerHTML = '<div style="text-align: center; color: rgba(139, 21, 40, 0.6);">Nenhum crash registrado ainda</div>';
         }
     })
     .catch(e => console.error('Erro:', e));
