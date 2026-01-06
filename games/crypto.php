@@ -123,6 +123,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
         exit;
     }
+
+    // AJAX - Obter histórico de crashes
+    if ($_POST['acao'] == 'historico_crashes') {
+        try {
+            $stmt = $pdo->prepare("
+                SELECT DISTINCT multiplicador 
+                FROM crypto_historico 
+                WHERE id_usuario = :id 
+                ORDER BY data_jogo DESC 
+                LIMIT 10
+            ");
+            $stmt->execute([':id' => $user_id]);
+            $crashes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+            // Formatar para mostrar apenas o número com uma casa decimal
+            $crashesFormatados = array_map(function($crash) {
+                return number_format($crash, 1, '.', '');
+            }, $crashes);
+
+            echo json_encode(['crashes' => $crashesFormatados]);
+        } catch (PDOException $e) {
+            echo json_encode(['crashes' => []]);
+        }
+        exit;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -140,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         body {
             font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #1a1a2e 100%);
+            background: linear-gradient(135deg, #1e1b4b 0%, #2d1b69 50%, #3d0066 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -162,14 +187,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         .header h1 {
             font-size: 2.8em;
             margin-bottom: 10px;
-            color: #00ff00;
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            color: #ff6b9d;
+            text-shadow: 0 0 20px rgba(255, 107, 157, 0.6);
             animation: glow 2s ease-in-out infinite;
         }
 
         @keyframes glow {
-            0%, 100% { text-shadow: 0 0 10px rgba(0, 255, 0, 0.5); }
-            50% { text-shadow: 0 0 20px rgba(0, 255, 0, 0.8); }
+            0%, 100% { text-shadow: 0 0 20px rgba(255, 107, 157, 0.6); }
+            50% { text-shadow: 0 0 30px rgba(255, 107, 157, 1); }
         }
 
         .stats-grid {
@@ -180,49 +205,50 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         .stat-card {
-            background: linear-gradient(135deg, rgba(0, 255, 0, 0.08) 0%, rgba(0, 200, 0, 0.05) 100%);
-            border: 2px solid #00ff00;
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.1) 0%, rgba(255, 165, 0, 0.08) 100%);
+            border: 2px solid #ff6b9d;
             padding: 20px;
             border-radius: 10px;
             text-align: center;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1), inset 0 0 20px rgba(0, 255, 0, 0.02);
+            box-shadow: 0 0 20px rgba(255, 107, 157, 0.2), inset 0 0 20px rgba(255, 107, 157, 0.05);
             transition: all 0.3s;
         }
 
         .stat-card:hover {
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2), inset 0 0 20px rgba(0, 255, 0, 0.05);
+            box-shadow: 0 0 30px rgba(255, 107, 157, 0.4), inset 0 0 20px rgba(255, 107, 157, 0.1);
             transform: translateY(-2px);
         }
 
         .stat-label {
             font-size: 0.9em;
-            color: #00ff00;
-            opacity: 0.7;
+            color: #ffa500;
+            opacity: 0.8;
             margin-bottom: 8px;
         }
 
         .stat-value {
             font-size: 1.8em;
             font-weight: bold;
-            color: #00ff00;
+            color: #ff6b9d;
         }
 
         .game-area {
-            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(10, 14, 39, 0.7) 100%);
-            border: 2px solid #00ff00;
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.08) 0%, rgba(255, 165, 0, 0.06) 100%);
+            border: 2px solid #ff6b9d;
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
+            box-shadow: 0 0 30px rgba(255, 107, 157, 0.2);
         }
 
         .canvas-container {
-            background: #0a0e27;
-            border: 1px solid #00ff00;
+            background: linear-gradient(135deg, #2d1b4b 0%, #3d2366 100%);
+            border: 2px solid #ff6b9d;
             border-radius: 10px;
             overflow: hidden;
             margin-bottom: 20px;
             position: relative;
+            box-shadow: inset 0 0 20px rgba(255, 107, 157, 0.1);
         }
 
         canvas {
@@ -237,8 +263,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             gap: 15px;
             margin-bottom: 20px;
             padding: 15px;
-            background: rgba(0, 255, 0, 0.05);
-            border: 1px solid #00ff00;
+            background: rgba(255, 107, 157, 0.08);
+            border: 2px solid #ff6b9d;
             border-radius: 8px;
         }
 
@@ -248,21 +274,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         .info-label {
             font-size: 0.85em;
-            color: #00ff00;
-            opacity: 0.7;
+            color: #ffa500;
+            opacity: 0.8;
             margin-bottom: 5px;
         }
 
         .info-value {
             font-size: 1.6em;
             font-weight: bold;
-            color: #00ff00;
+            color: #ff6b9d;
         }
 
         .multiplier-display {
             font-size: 2em;
             font-weight: bold;
-            color: #00ff00;
+            color: #ff6b9d;
             text-align: center;
             margin: 10px 0;
             min-height: 40px;
@@ -282,7 +308,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         label {
-            color: #00ff00;
+            color: #ff6b9d;
             font-size: 0.95em;
             font-weight: bold;
         }
@@ -290,10 +316,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         input[type="number"],
         input[type="text"] {
             padding: 12px;
-            background: rgba(0, 255, 0, 0.1);
-            border: 2px solid #00ff00;
+            background: rgba(255, 107, 157, 0.1);
+            border: 2px solid #ff6b9d;
             border-radius: 8px;
-            color: #00ff00;
+            color: #ff6b9d;
             font-family: 'Courier New', monospace;
             font-size: 1.1em;
         }
@@ -301,8 +327,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         input[type="number"]:focus,
         input[type="text"]:focus {
             outline: none;
-            border-color: #00ff00;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            border-color: #ff6b9d;
+            box-shadow: 0 0 10px rgba(255, 107, 157, 0.5);
         }
 
         button {
@@ -319,14 +345,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         .btn-play {
-            background: linear-gradient(135deg, #00ff00 0%, #00dd00 100%);
-            color: #000;
+            background: linear-gradient(135deg, #ff6b9d 0%, #ff8fb8 100%);
+            color: #fff;
             grid-column: 1 / 2;
         }
 
         .btn-play:hover:not(:disabled) {
             transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            box-shadow: 0 0 20px rgba(255, 107, 157, 0.6);
         }
 
         .btn-play:disabled {
@@ -335,7 +361,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         .btn-cashout {
-            background: linear-gradient(135deg, #ff6b00 0%, #ff8800 100%);
+            background: linear-gradient(135deg, #ffa500 0%, #ffb84d 100%);
             color: #fff;
             grid-column: 2 / 4;
             font-size: 1.3em;
@@ -348,18 +374,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         .btn-cashout:hover:not(:disabled) {
             transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(255, 107, 0, 0.5);
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.6);
         }
 
         .btn-back {
-            background: rgba(0, 255, 0, 0.1);
-            color: #00ff00;
-            border: 2px solid #00ff00;
+            background: rgba(255, 107, 157, 0.15);
+            color: #ff6b9d;
+            border: 2px solid #ff6b9d;
             grid-column: 1 / -1;
         }
 
         .btn-back:hover {
-            background: rgba(0, 255, 0, 0.2);
+            background: rgba(255, 107, 157, 0.25);
         }
 
         .message {
@@ -382,9 +408,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         .message.success {
-            background: rgba(0, 255, 0, 0.2);
-            color: #00ff00;
-            border: 2px solid #00ff00;
+            background: rgba(255, 107, 157, 0.2);
+            color: #ff6b9d;
+            border: 2px solid #ff6b9d;
         }
 
         .message.crash {
@@ -394,7 +420,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         .history-title {
-            color: #00ff00;
+            color: #ff6b9d;
+            font-size: 1.2em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .crash-history-section {
+            margin: 30px 0;
+        }
+
+        .crash-history {
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.1) 0%, rgba(255, 165, 0, 0.08) 100%);
+            border: 2px solid #ff6b9d;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .crash-history-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .crash-item {
+            background: linear-gradient(135deg, rgba(255, 165, 0, 0.2) 0%, rgba(255, 107, 157, 0.15) 100%);
+            border: 2px solid #ffa500;
+            border-radius: 8px;
+            padding: 12px 20px;
+            color: #ff6b9d;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            transition: all 0.3s;
+            box-shadow: 0 0 15px rgba(255, 165, 0, 0.2);
+        }
+
+        .crash-item:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 25px rgba(255, 165, 0, 0.4);
+            border-color: #ff6b9d;
+        }
+
+        .history-title {
+            color: #ff6b9d;
             font-size: 1.2em;
             margin-top: 30px;
             margin-bottom: 15px;
@@ -403,11 +476,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         .history-table {
             width: 100%;
-            background: linear-gradient(135deg, rgba(0, 255, 0, 0.08) 0%, rgba(0, 200, 0, 0.05) 100%);
-            border: 2px solid #00ff00;
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.1) 0%, rgba(255, 165, 0, 0.08) 100%);
+            border: 2px solid #ff6b9d;
             border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
+            box-shadow: 0 0 20px rgba(255, 107, 157, 0.15);
         }
 
         .history-table table {
@@ -417,26 +490,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         .history-table th {
-            background: linear-gradient(135deg, rgba(0, 255, 0, 0.15) 0%, rgba(0, 200, 0, 0.1) 100%);
-            color: #00ff00;
+            background: linear-gradient(135deg, rgba(255, 107, 157, 0.2) 0%, rgba(255, 165, 0, 0.15) 100%);
+            color: #ff6b9d;
             padding: 12px;
             text-align: left;
-            border-bottom: 2px solid #00ff00;
+            border-bottom: 2px solid #ff6b9d;
             font-weight: bold;
         }
 
         .history-table td {
             padding: 10px 12px;
-            border-bottom: 1px solid rgba(0, 255, 0, 0.15);
-            color: #00ff00;
+            border-bottom: 1px solid rgba(255, 107, 157, 0.2);
+            color: #ffa500;
         }
 
         .history-table tr:hover {
-            background: rgba(0, 255, 0, 0.1);
+            background: rgba(255, 107, 157, 0.15);
         }
 
         .win { 
-            color: #00ff00;
+            color: #4ade80;
             font-weight: bold;
         }
         .loss { 
@@ -517,6 +590,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             <button class="btn-back" onclick="window.location.href='index.php'">← Voltar ao Menu</button>
         </div>
 
+        <div class="crash-history-section">
+            <div class="history-title">🎲 Últimos Crashes</div>
+            <div class="crash-history" id="crashHistory">
+                <div style="text-align: center; color: #ffa500; padding: 15px;">Carregando histórico...</div>
+            </div>
+        </div>
+
         <div class="history-title">📜 Últimas Rodadas</div>
         <div class="history-table" id="historico">
             <table>
@@ -558,7 +638,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             ctx.fillRect(0, 0, gameWidth, gameHeight);
 
             // Grid
-            ctx.strokeStyle = 'rgba(0, 255, 0, 0.1)';
+            ctx.strokeStyle = 'rgba(255, 107, 157, 0.1)';
             ctx.lineWidth = 1;
             for (let i = 0; i < gameWidth; i += 50) {
                 ctx.beginPath();
@@ -574,7 +654,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             }
 
             // Eixos
-            ctx.strokeStyle = '#00ff00';
+            ctx.strokeStyle = '#ff6b9d';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(padding, gameHeight - padding);
@@ -587,13 +667,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             ctx.stroke();
 
             // Labels
-            ctx.fillStyle = '#00ff00';
+            ctx.fillStyle = '#ff6b9d';
             ctx.font = '12px Courier New';
             ctx.fillText('TEMPO', gameWidth - 100, gameHeight - 20);
             ctx.fillText('MULTIPLICADOR', 10, 20);
 
             if (gameState === 'idle') {
-                ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
+                ctx.fillStyle = 'rgba(255, 107, 157, 0.6)';
                 ctx.font = 'bold 24px Courier New';
                 ctx.textAlign = 'center';
                 ctx.fillText('Clique em JOGAR para começar', gameWidth / 2, gameHeight / 2);
@@ -630,12 +710,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             ctx.fillText('💥 CRASH: ' + crashPoint.toFixed(2) + 'x', padding + 15, crashY - 15);
 
             // Desenhar curva do jogo com efeito de brilho
-            ctx.shadowColor = gameState === 'crashed' ? 'rgba(255, 107, 0, 0.6)' : 'rgba(0, 255, 0, 0.4)';
+            ctx.shadowColor = gameState === 'crashed' ? 'rgba(255, 107, 157, 0.8)' : 'rgba(255, 107, 157, 0.6)';
             ctx.shadowBlur = 10;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
 
-            ctx.strokeStyle = gameState === 'crashed' ? '#ff6b6b' : '#00ff00';
+            ctx.strokeStyle = gameState === 'crashed' ? '#ff6b6b' : '#ff6b9d';
             ctx.lineWidth = 4;
             ctx.beginPath();
 
@@ -678,16 +758,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             ctx.textAlign = 'left';
 
             // Desenhar status com maior destaque
-            ctx.fillStyle = gameState === 'crashed' ? '#ff6b6b' : '#00ff00';
+            ctx.fillStyle = gameState === 'crashed' ? '#ff6b6b' : '#ff6b9d';
             ctx.font = 'bold 18px Courier New';
             ctx.fillText('📈 Multiplicador: ' + currentMultiplier.toFixed(2) + 'x', padding, 40);
 
             // Crash visual
             if (gameState === 'crashed') {
-                ctx.fillStyle = 'rgba(255, 0, 0, 0.9)';
+                ctx.fillStyle = 'rgba(255, 107, 157, 0.95)';
                 ctx.font = 'bold 40px Courier New';
                 ctx.textAlign = 'center';
-                ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
+                ctx.shadowColor = 'rgba(255, 107, 157, 0.9)';
                 ctx.shadowBlur = 20;
                 ctx.fillText('💥 CRASHED! 💥', gameWidth / 2, gameHeight / 2);
                 ctx.shadowColor = 'transparent';
@@ -847,6 +927,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         // Iniciar animação
         desenharTela();
         animacaoJogo();
+
+        // Carregar histórico de crashes
+        function carregarHistoricoCrashes() {
+            fetch('crypto.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'acao=historico_crashes'
+            })
+            .then(r => r.json())
+            .then(data => {
+                const container = document.getElementById('crashHistory');
+                
+                if (data.crashes && data.crashes.length > 0) {
+                    const items = data.crashes.map(crash => 
+                        `<div class="crash-item">${crash}x</div>`
+                    ).join('');
+                    
+                    container.innerHTML = `<div class="crash-history-items">${items}</div>`;
+                } else {
+                    container.innerHTML = '<div style="text-align: center; color: #ffa500; padding: 15px;">Nenhum crash registrado ainda</div>';
+                }
+            })
+            .catch(e => {
+                console.error('Erro ao carregar histórico:', e);
+                document.getElementById('crashHistory').innerHTML = '<div style="text-align: center; color: #ff6b6b; padding: 15px;">Erro ao carregar histórico</div>';
+            });
+        }
+
+        // Carregar histórico ao iniciar a página
+        carregarHistoricoCrashes();
+
+        // Atualizar histórico a cada 5 segundos
+        setInterval(carregarHistoricoCrashes, 5000);
     </script>
 </body>
 </html>
