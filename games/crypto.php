@@ -165,9 +165,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         :root { --accent: #8b1528; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Courier New', monospace; background-color: #000; }
-        .navbar-custom { background: linear-gradient(90deg, #1a1a1a 0%, #2d2d2d 100%); border-bottom: 2px solid var(--accent); padding: 15px 25px; }
-        .navbar-custom .brand-name { font-size: 1.8em; font-weight: bold; color: var(--accent); text-decoration: none; text-shadow: 0 0 10px rgba(139, 21, 40, 0.5); }
-        .saldo-badge { background: rgba(139, 21, 40, 0.2); border: 1px solid var(--accent); padding: 8px 15px; border-radius: 6px; color: var(--accent); font-weight: bold; }
+        .navbar-custom { background: #000; border-bottom: 1px solid #333; padding: 15px 25px; }
+        .navbar-custom .brand-name { font-size: 1.8em; font-weight: bold; color: #fff; text-decoration: none; text-shadow: none; }
+        .saldo-badge { background: rgba(46, 213, 115, 0.15); border: 1px solid #2ed573; padding: 8px 15px; border-radius: 6px; color: #2ed573; font-weight: bold; }
         .container-main { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
         .section-title { color: var(--accent); font-size: 1.3em; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(139, 21, 40, 0.3); }
         .game-container { background: linear-gradient(135deg, rgba(139, 21, 40, 0.05) 0%, rgba(139, 21, 40, 0.02) 100%); border: 2px solid var(--accent); border-radius: 12px; padding: 25px; margin-bottom: 30px; display: flex; flex-direction: column; gap: 20px; }
@@ -219,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 <span style="color: #999; font-size: 0.9rem;">Bem-vindo(a),</span>
                 <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong>
             </div>
-            <div style="width: 36px; height: 51px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent); border-radius: 4px;">
+            <div style="width: 36px; height: 51px; display: flex; align-items: center; justify-content: center; border: 1px solid #2ed573; border-radius: 4px;">
                 <?php $avatar_user = obterCustomizacaoAvatar($pdo, $user_id); echo renderizarAvatarSVG($avatar_user, 24); ?>
             </div>
         </div>
