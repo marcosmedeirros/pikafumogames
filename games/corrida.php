@@ -137,13 +137,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     if ($_POST['acao'] == 'finalizar') {
         $sala_id = $_POST['sala_id'];
         $tempo = $_POST['tempo'];
+        $moedas = isset($_POST['moedas']) ? (int)$_POST['moedas'] : 0;
         
         $pdo->prepare("UPDATE corrida_participantes SET tempo_final = :t, status = 'finalizou' WHERE id_sala = :sid AND id_usuario = :uid")
             ->execute([':t' => $tempo, ':sid' => $sala_id, ':uid' => $user_id]);
             
-        // Verifica Vencedor e Paga (Só o primeiro a chegar chama essa lógica ou todos chamam e quem tiver menor tempo leva?)
-        // Melhor lógica: O cliente verifica se é o vencedor localmente, mas o servidor valida.
-        // Aqui vamos simplificar: Ao carregar o pódio, calculamos o vencedor.
         echo json_encode(['sucesso' => true]);
         exit;
     }
@@ -151,6 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     // E. REIVINDICAR PRÊMIO
     if ($_POST['acao'] == 'ver_podio') {
         $sala_id = $_POST['sala_id'];
+        $moedas_coletadas = isset($_POST['moedas']) ? min((int)$_POST['moedas'], 10) : 0; // Máximo 10
         $ranking = $pdo->query("SELECT id_usuario, nome_usuario, tempo_final FROM corrida_participantes WHERE id_sala = $sala_id AND status = 'finalizou' ORDER BY tempo_final ASC")->fetchAll(PDO::FETCH_ASSOC);
         
         $premio = 0;
@@ -160,21 +159,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             $check->execute([':sid' => $sala_id, ':uid' => $user_id]);
             
             if ($check->fetchColumn() == 0) {
-                // Paga o pote (5 moedas * numero de players)
+                // Paga o pote (5 moedas * numero de players) + moedas coletadas
                 $count = $pdo->query("SELECT COUNT(*) FROM corrida_participantes WHERE id_sala = $sala_id")->fetchColumn();
-                $premio = $count * 5;
+                $premio = ($count * 5) + $moedas_coletadas;
                 
                 $pdo->beginTransaction();
                 $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :uid")->execute([':val' => $premio, ':uid' => $user_id]);
                 $pdo->prepare("UPDATE corrida_participantes SET recompensa_coletada = 1 WHERE id_sala = :sid AND id_usuario = :uid")->execute([':sid' => $sala_id, ':uid' => $user_id]);
                 $pdo->commit();
             }
-        }
-        
-        // Pagamento SOLO (Treino)
-        if ($_POST['modo'] == 'SOLO' && $_POST['venceu'] == 'true') {
-             $pdo->prepare("UPDATE usuarios SET pontos = pontos + 8 WHERE id = :id")->execute([':id' => $user_id]);
-             $premio = 8;
+        } elseif ($_POST['modo'] == 'SOLO') {
+            // Pagamento SOLO (Treino) - crédita moedas coletadas
+            $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :id")->execute([':val' => $moedas_coletadas, ':id' => $user_id]);
+            $premio = $moedas_coletadas;
         }
 
         echo json_encode(['ranking' => $ranking, 'premio' => $premio]);
@@ -226,7 +223,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     <div id="game-hud" class="hud hidden">
         <div class="text-warning">
             <div id="timer">00:00.00</div>
-            <div class="small text-white" id="lap">VOLTA 1/3</div>
+            <div class="small text-white" id="lap">VOLTA 1/2</div>
+        </div>
+        <div class="text-info" style="position: absolute; top: 80px; right: 20px; font-family: monospace; background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 8px;">
+            💰 <span id="coins-display">0</span>/10
         </div>
         <div class="turbo-bar">
             <div id="turbo-fill" class="turbo-fill"></div>
@@ -310,10 +310,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     let startTime = 0;
     let raceTime = 0;
     
-    let trackLength = 50000; // Distância total (pixels)
+    let trackLength = 100000; // Distância total (2 voltas x 50000)
     let traffic = []; 
     let opponents = {}; // Jogadores remotos { id: {x, y, progresso, cor} }
     let particles = [];
+    let coins = []; // Moedas na pista
+    let coinsCollected = 0; // Máximo 10
+    const MAX_COINS = 10;
 
     // Controles
     const keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, KeyN: false };
@@ -417,6 +420,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             });
         }
 
+        // Gerar Moedas ao longo da pista (máximo 15, player coleta até 10)
+        coins = [];
+        for(let i=0; i<15; i++) {
+            coins.push({
+                x: Math.floor(rng() * 5) * LANE_WIDTH + (LANE_WIDTH/2 - 10),
+                y: -i * 8000 - 5000,
+                collected: false
+            });
+        }
+        coinsCollected = 0;
+
         if(gameMode === 'MULTI') syncInterval = setInterval(syncGame, 500); // Polling rápido no jogo
         requestAnimationFrame(gameLoop);
     }
@@ -509,6 +523,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         document.getElementById('timer').innerText = raceTime.toFixed(2);
         document.getElementById('speed').innerText = Math.floor(speed * 10);
         document.getElementById('turbo-fill').style.width = turbo + '%';
+        // Lap counter
+        let lap = Math.floor((cameraY / trackLength) * 2) + 1;
+        document.getElementById('lap').innerText = 'VOLTA ' + Math.min(lap, 2) + '/2';
 
         // Colisão Tráfego
         traffic.forEach(t => {
@@ -527,6 +544,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         // Partículas
         particles.forEach((p, i) => { p.y += speed; p.life--; if(p.life<=0) particles.splice(i,1); });
+
+        // Coleta de Moedas
+        coins.forEach(coin => {
+            // Move moeda relativa à câmera
+            coin.y += speed;
+            // Reset infinito
+            if(coin.y > 900) coin.y = -trackLength + 5000 + Math.random() * 10000;
+            // Colisão com player (hitbox simples)
+            if (!coin.collected && 
+                playerX < coin.x + 20 && playerX + CAR_W > coin.x &&
+                600 - 50 < coin.y + 20 && 600 + CAR_H > coin.y) {
+                coin.collected = true;
+                if (coinsCollected < MAX_COINS) {
+                    coinsCollected++;
+                    document.getElementById('coins-display').innerText = coinsCollected;
+                }
+            }
+        });
 
         // Fim de Jogo
         if(cameraY >= trackLength) finishRace();
@@ -558,6 +593,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 ctx.fillStyle = '#fff'; ctx.font = '12px Arial'; ctx.fillText(op.name, op.x, op.y - 10);
             }
         }
+
+        // Moedas
+        coins.forEach(coin => {
+            if (!coin.collected && coin.y > -50 && coin.y < 850) {
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath();
+                ctx.arc(coin.x + 10, coin.y + 10, 8, 0, Math.PI * 2);
+                ctx.fill();
+                // Borda
+                ctx.strokeStyle = '#ffb300';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        });
 
         // Tráfego
         traffic.forEach(t => drawCar(t.x, t.y, t.color, false));
@@ -609,26 +658,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         document.getElementById('game-hud').classList.add('hidden');
         document.getElementById('result-screen').classList.remove('hidden');
         
-        // Envia tempo final
+        // Envia tempo final e moedas coletadas
         const fd = new FormData(); 
         fd.append('acao', 'finalizar'); 
         fd.append('sala_id', roomId);
         fd.append('tempo', raceTime);
+        fd.append('moedas', coinsCollected);
         fetch('corrida.php', { method:'POST', body:fd });
 
         // Busca pódio (delay pequeno para garantir que banco atualizou)
         setTimeout(() => {
-            const fd2 = new FormData(); fd2.append('acao', 'ver_podio'); fd2.append('sala_id', roomId); fd2.append('modo', gameMode); fd2.append('venceu', 'true'); // Simplificado para Solo
+            const fd2 = new FormData(); fd2.append('acao', 'ver_podio'); fd2.append('sala_id', roomId); fd2.append('modo', gameMode); fd2.append('moedas', coinsCollected);
             fetch('corrida.php', { method:'POST', body:fd2 }).then(r=>r.json()).then(d => {
-                let html = '<ol class="list-group list-group-numbered">';
-                d.ranking.forEach(r => {
-                    html += `<li class="list-group-item d-flex justify-content-between align-items-start bg-dark text-white border-secondary">
-                                <div class="ms-2 me-auto fw-bold">${r.nome_usuario}</div>
-                                <span class="badge bg-primary rounded-pill">${r.tempo_final}s</span>
+                let html = '<h5 class="text-warning mb-3">⏱️ RANKING DE TEMPO</h5>';
+                html += '<ol class="list-group list-group-numbered" style="list-style: none; padding: 0;">';
+                d.ranking.forEach((r, idx) => {
+                    let medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+                    html += `<li class="list-group-item d-flex justify-content-between align-items-center bg-dark text-white border-secondary mb-2">
+                                <div>${medal} ${r.nome_usuario}</div>
+                                <span class="badge bg-primary rounded-pill">${parseFloat(r.tempo_final).toFixed(2)}s</span>
                              </li>`;
                 });
                 html += '</ol>';
-                if(d.premio > 0) html += `<div class="alert alert-success mt-3 fw-bold text-center">💰 VOCÊ GANHOU ${d.premio} MOEDAS!</div>`;
+                if(d.premio > 0) {
+                    html += `<div class="alert alert-success mt-3 fw-bold text-center">💰 MOEDAS COLETADAS: ${d.premio}/10</div>`;
+                }
                 document.getElementById('res-content').innerHTML = html;
             });
         }, 1000);
