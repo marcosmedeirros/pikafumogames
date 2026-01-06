@@ -172,11 +172,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         .section-title { color: var(--accent); font-size: 1.3em; font-weight: bold; margin-bottom: 20px; text-shadow: 0 0 10px rgba(196, 30, 58, 0.3); }
         .game-container { background: linear-gradient(135deg, rgba(196, 30, 58, 0.05) 0%, rgba(196, 30, 58, 0.02) 100%); border: 2px solid var(--accent); border-radius: 12px; padding: 25px; margin-bottom: 30px; display: flex; flex-direction: column; gap: 20px; }
         .game-title { color: var(--accent); font-size: 1.8em; margin-bottom: 0; text-align: center; font-weight: bold; text-shadow: 0 0 15px rgba(196, 30, 58, 0.4); width: 100%; }
-        .game-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; align-items: start; }
+        .game-columns { display: grid; grid-template-columns: 1.8fr 1fr; gap: 25px; align-items: start; }
         .game-left { display: flex; flex-direction: column; gap: 15px; }
         .game-right { display: flex; flex-direction: column; gap: 15px; }
         .canvas-wrapper { background: #000; border: 1px solid rgba(196, 30, 58, 0.3); border-radius: 8px; padding: 15px; margin-bottom: 0; overflow: hidden; max-width: 100%; }
-        canvas { display: block; width: 100%; height: auto; background: #000; max-height: 350px; }
+        canvas { display: block; width: 100%; height: auto; background: #000; max-height: 500px; aspect-ratio: 800 / 400; }
         .stats-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 0; }
         .stat-card { background: rgba(196, 30, 58, 0.1); border: 1px solid var(--accent); padding: 12px; border-radius: 8px; text-align: center; }
         .stat-label { color: rgba(196, 30, 58, 0.8); font-size: 0.8em; margin-bottom: 5px; }
@@ -206,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         .history-table tr:hover { background: rgba(196, 30, 58, 0.1); }
         .control-buttons { display: flex; gap: 8px; flex-direction: column; align-items: stretch; }
         .control-buttons .btn-custom { flex: 1; min-width: auto; margin-right: 0; }
-        @media (max-width: 1200px) { .game-columns { grid-template-columns: 1fr; } .game-left, .game-right { width: 100%; } }
+        @media (max-width: 1200px) { .game-columns { grid-template-columns: 1fr; } .game-left, .game-right { width: 100%; } canvas { max-height: 400px; } }
         @media (max-width: 768px) { .control-buttons { flex-direction: column; } .control-buttons .btn-custom { width: 100%; margin-right: 0; } .game-columns { grid-template-columns: 1fr; } canvas { max-height: 300px; } }
     </style>
 </head>
