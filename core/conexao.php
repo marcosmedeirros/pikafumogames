@@ -3,8 +3,8 @@
 
 $host = 'localhost';
 $dbname = 'u289267434_lumacio';
-$user = 'u289267434_macoinhas';
-$pass = 'Zonete@13';
+$user = 'root';
+$pass = '';
 
 try {
     // Conexão com PDO

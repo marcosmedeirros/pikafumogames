@@ -2,11 +2,11 @@
 // corrida.php - CORRIDA MULTIPLAYER REALTIME 🏎️💨
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-session_start();
-require 'conexao.php';
+// session_start já é chamado em games/index.php
+require '../core/conexao.php';
 
 // 1. Segurança
-if (!isset($_SESSION['user_id'])) { header("Location: login.php"); exit; }
+if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit; }
 $user_id = $_SESSION['user_id'];
 
 // 2. Configuração do Banco
@@ -248,7 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 <button onclick="enterLobby()" class="btn-neon btn-lg"><i class="bi bi-globe me-2"></i>MULTIPLAYER (Aposta 5)</button>
             </div>
             <div class="mt-4 pt-3 border-top border-secondary">
-                <a href="painel.php" class="text-white-50 text-decoration-none small"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
+                <a href="../index.php" class="text-white-50 text-decoration-none small"><i class="bi bi-arrow-left"></i> Voltar ao Painel</a>
             </div>
         </div>
     </div>
@@ -316,7 +316,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     let particles = [];
 
     // Controles
-    const keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false };
+    const keys = { ArrowLeft: false, ArrowRight: false, ArrowUp: false, KeyN: false };
     document.addEventListener('keydown', e => keys[e.code] = true);
     document.addEventListener('keyup', e => keys[e.code] = false);
 
@@ -384,6 +384,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         initRace(Date.now()); // Seed aleatória baseada no tempo
     }
 
+    // RNG determinístico simples (LCG) para sincronizar tráfego entre clientes
+    function createRng(seed) {
+        let state = seed % 2147483647;
+        if (state <= 0) state += 2147483646;
+        return function() {
+            state = state * 16807 % 2147483647;
+            return (state - 1) / 2147483646;
+        };
+    }
+
     function initRace(seed) {
         document.getElementById('lobby-screen').classList.add('hidden');
         document.getElementById('game-hud').classList.remove('hidden');
@@ -395,14 +405,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         startTime = Date.now();
         gameState = 'RUNNING';
 
-        // Gerar Tráfego (Pseudo-aleatório com Seed para sincronia visual básica)
+        // Gerar Tráfego com RNG determinístico baseado na seed
         traffic = [];
-        let rng = new Math.seedrandom(seed); // Precisaria de lib externa, vamos improvisar
+        const rng = createRng(seed || Date.now());
         for(let i=0; i<50; i++) {
             traffic.push({
-                x: Math.floor(Math.random() * 5) * LANE_WIDTH + (LANE_WIDTH/2 - CAR_W/2),
+                x: Math.floor(rng() * 5) * LANE_WIDTH + (LANE_WIDTH/2 - CAR_W/2),
                 y: -i * 600 - 800,
-                speed: 5 + Math.random() * 5,
+                speed: 5 + rng() * 5,
                 color: '#555'
             });
         }
@@ -466,8 +476,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
     function updatePhysics() {
         // Controles
-        if(keys.ArrowUp && turbo > 0) { isTurbo = true; turbo -= 0.5; speed += 0.5; spawnParticles(); } 
-        else { isTurbo = false; speed -= 0.2; if(turbo < 100) turbo += 0.1; }
+        // Aceleração base (seta para cima)
+        if (keys.ArrowUp) {
+            speed += 0.3;
+        } else {
+            speed -= 0.2;
+        }
+
+        // Nitro no "N" (consome turbo)
+        if (keys.KeyN && turbo > 0) {
+            isTurbo = true;
+            speed += 0.7;
+            turbo = Math.max(0, turbo - 1);
+            spawnParticles();
+        } else {
+            isTurbo = false;
+            if (turbo < 100) turbo = Math.min(100, turbo + 0.25);
+        }
         
         if(keys.ArrowLeft && playerX > 0) playerX -= 8;
         if(keys.ArrowRight && playerX < canvas.width - CAR_W) playerX += 8;
