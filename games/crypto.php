@@ -255,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">📈 Multiplicador</div>
-                        <div class="stat-value">1.00x</div>
+                        <div class="stat-value" id="displayMultiplier">1.00x</div>
                     </div>
                 </div>
             </div>
@@ -393,8 +393,8 @@ function desenharGrafico() {
     ctx.shadowColor = 'transparent';
     ctx.textAlign = 'left';
     ctx.fillStyle = gameState === 'crashed' ? '#fff' : '#8b1528';
-    ctx.font = 'bold 28px Courier New';
-    ctx.fillText('� ' + currentMultiplier.toFixed(2) + 'x', padding + 20, 70);
+    ctx.font = 'bold 48px Courier New';
+    ctx.fillText('🚀 ' + currentMultiplier.toFixed(2) + 'x', padding + 20, 80);
     if (gameState === 'crashed') {
         ctx.fillStyle = '#fff';
         ctx.font = 'bold 60px Courier New';
@@ -417,6 +417,7 @@ function animacaoJogo() {
             animationFrame += 0.08;
             const t = Math.min(animationFrame / 400, 1);
             currentMultiplier = 1.0 + Math.pow(t, 1.05) * 2.5;
+            document.getElementById('displayMultiplier').textContent = currentMultiplier.toFixed(2) + 'x';
             if (currentMultiplier >= currentRound.crash_point) {
                 gameState = 'crashed';
                 crasharJogo();
@@ -507,6 +508,7 @@ function resetarJogo() {
     currentRound = null;
     animationFrame = 0;
     currentMultiplier = 1.0;
+    document.getElementById('displayMultiplier').textContent = '1.00x';
     document.getElementById('btnPlay').disabled = false;
     document.getElementById('btnCashout').style.display = 'none';
     document.getElementById('btnCashout').disabled = false;
