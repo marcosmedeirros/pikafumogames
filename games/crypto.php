@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         body {
             font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(135deg, #0a0e27 0%, #16213e 50%, #1a1a2e 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
@@ -180,11 +180,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         .stat-card {
-            background: rgba(0, 255, 0, 0.05);
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.08) 0%, rgba(0, 200, 0, 0.05) 100%);
             border: 2px solid #00ff00;
             padding: 20px;
             border-radius: 10px;
             text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1), inset 0 0 20px rgba(0, 255, 0, 0.02);
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2), inset 0 0 20px rgba(0, 255, 0, 0.05);
+            transform: translateY(-2px);
         }
 
         .stat-label {
@@ -201,11 +208,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         .game-area {
-            background: rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(10, 14, 39, 0.7) 100%);
             border: 2px solid #00ff00;
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.2);
         }
 
         .canvas-container {
@@ -395,10 +403,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
         .history-table {
             width: 100%;
-            background: rgba(0, 255, 0, 0.05);
-            border: 1px solid #00ff00;
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.08) 0%, rgba(0, 200, 0, 0.05) 100%);
+            border: 2px solid #00ff00;
             border-radius: 8px;
             overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.1);
         }
 
         .history-table table {
@@ -408,25 +417,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         .history-table th {
-            background: rgba(0, 255, 0, 0.1);
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.15) 0%, rgba(0, 200, 0, 0.1) 100%);
             color: #00ff00;
             padding: 12px;
             text-align: left;
             border-bottom: 2px solid #00ff00;
+            font-weight: bold;
         }
 
         .history-table td {
             padding: 10px 12px;
-            border-bottom: 1px solid rgba(0, 255, 0, 0.2);
+            border-bottom: 1px solid rgba(0, 255, 0, 0.15);
             color: #00ff00;
         }
 
         .history-table tr:hover {
-            background: rgba(0, 255, 0, 0.05);
+            background: rgba(0, 255, 0, 0.1);
         }
 
-        .win { color: #00ff00; }
-        .loss { color: #ff6b6b; }
+        .win { 
+            color: #00ff00;
+            font-weight: bold;
+        }
+        .loss { 
+            color: #ff6b6b;
+            font-weight: bold;
+        }
 
         @media (max-width: 768px) {
             .control-area {
@@ -594,9 +610,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             const startX = padding;
             const startY = maxY;
 
-            // Desenhar linha de crash
-            ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
-            ctx.lineWidth = 1;
+            // Desenhar linha de crash com gradiente
+            let gradientLine = ctx.createLinearGradient(startX, startY, maxX, padding);
+            gradientLine.addColorStop(0, 'rgba(255, 0, 0, 0.1)');
+            gradientLine.addColorStop(1, 'rgba(255, 0, 0, 0.5)');
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.4)';
+            ctx.lineWidth = 2;
             ctx.setLineDash([5, 5]);
             ctx.beginPath();
             const crashY = maxY - (crashPoint / 5) * (maxY - padding);
@@ -605,48 +624,73 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Desenhar texto de crash
-            ctx.fillStyle = 'rgba(255, 0, 0, 0.6)';
-            ctx.font = '12px Courier New';
-            ctx.fillText('CRASH: ' + crashPoint.toFixed(2) + 'x', padding + 10, crashY - 10);
+            // Desenhar texto de crash com sombra
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+            ctx.font = 'bold 14px Courier New';
+            ctx.fillText('💥 CRASH: ' + crashPoint.toFixed(2) + 'x', padding + 15, crashY - 15);
 
-            // Desenhar curva do jogo
+            // Desenhar curva do jogo com efeito de brilho
+            ctx.shadowColor = gameState === 'crashed' ? 'rgba(255, 107, 0, 0.6)' : 'rgba(0, 255, 0, 0.4)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+
             ctx.strokeStyle = gameState === 'crashed' ? '#ff6b6b' : '#00ff00';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 4;
             ctx.beginPath();
 
-            const steps = Math.min(animationFrame, 100);
+            const steps = Math.min(animationFrame, 150);
             for (let i = 0; i <= steps; i++) {
-                const t = i / 100;
+                const t = i / 150;
                 const x = startX + (maxX - startX) * t;
-                // Função exponencial para crescimento do gráfico
-                const y = startY - Math.pow(currentMultiplier, 0.5) * (maxY - padding) * Math.pow(t, 1.5) * 0.8;
+                // Crescimento mais suave e realista
+                const progress = Math.pow(t, 1.2);
+                const y = startY - (currentMultiplier - 1) * (maxY - padding) * progress * 0.9;
                 if (i === 0) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
             }
             ctx.stroke();
+            ctx.shadowColor = 'transparent';
 
-            // Desenhar rocket
-            const t = Math.min(animationFrame / 100, 1);
+            // Desenhar rocket com efeito e chama
+            const t = Math.min(animationFrame / 150, 1);
             const rocketX = padding + (maxX - padding) * t;
-            const rocketY = maxY - Math.pow(currentMultiplier, 0.5) * (maxY - padding) * Math.pow(t, 1.5) * 0.8;
+            const progress = Math.pow(t, 1.2);
+            const rocketY = maxY - (currentMultiplier - 1) * (maxY - padding) * progress * 0.9;
 
-            ctx.fillStyle = '#ff8800';
-            ctx.font = 'bold 30px Arial';
+            // Chama do foguete
+            if (gameState === 'playing') {
+                ctx.fillStyle = `rgba(255, ${Math.random() * 100 + 100}, 0, 0.6)`;
+                ctx.beginPath();
+                ctx.moveTo(rocketX, rocketY + 15);
+                ctx.lineTo(rocketX - 5 + Math.random() * 10, rocketY + 30 + Math.random() * 10);
+                ctx.lineTo(rocketX + 5 + Math.random() * 10, rocketY + 30 + Math.random() * 10);
+                ctx.fill();
+            }
+
+            // Foguete principal
+            ctx.font = 'bold 35px Arial';
             ctx.textAlign = 'center';
+            ctx.shadowColor = 'rgba(255, 136, 0, 0.8)';
+            ctx.shadowBlur = 15;
             ctx.fillText('🚀', rocketX, rocketY);
+            ctx.shadowColor = 'transparent';
             ctx.textAlign = 'left';
 
-            // Desenhar status
+            // Desenhar status com maior destaque
             ctx.fillStyle = gameState === 'crashed' ? '#ff6b6b' : '#00ff00';
-            ctx.font = 'bold 16px Courier New';
-            ctx.fillText('Multiplicador: ' + currentMultiplier.toFixed(2) + 'x', padding, 40);
+            ctx.font = 'bold 18px Courier New';
+            ctx.fillText('📈 Multiplicador: ' + currentMultiplier.toFixed(2) + 'x', padding, 40);
 
+            // Crash visual
             if (gameState === 'crashed') {
-                ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
-                ctx.font = 'bold 36px Courier New';
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.9)';
+                ctx.font = 'bold 40px Courier New';
                 ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(255, 0, 0, 0.8)';
+                ctx.shadowBlur = 20;
                 ctx.fillText('💥 CRASHED! 💥', gameWidth / 2, gameHeight / 2);
+                ctx.shadowColor = 'transparent';
                 ctx.textAlign = 'left';
             }
         }
@@ -658,8 +702,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 desenharGrafico();
 
                 if (gameState === 'playing') {
-                    animationFrame += 0.5;
-                    currentMultiplier = 1.0 + (animationFrame / 100) * 4; // Vai até ~5x
+                    animationFrame += 0.25;  // Mais lento (era 0.5)
+                    // Crescimento mais suave e equilibrado
+                    const t = Math.min(animationFrame / 150, 1);
+                    currentMultiplier = 1.0 + Math.pow(t, 1.1) * 4; // Vai até ~5x, mas mais lentamente
 
                     // Atualizar display
                     document.getElementById('multiplicadorDisplay').textContent = currentMultiplier.toFixed(2) + 'x';
