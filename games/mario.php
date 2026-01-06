@@ -276,16 +276,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         // Inicializar plataformas
         function initPlatforms() {
             platforms = [];
+            
+            // CHÃO permanente no início
+            platforms.push({
+                x: 0,
+                y: canvas.height - 50,
+                width: canvas.width,
+                height: 50,
+                color: '#8B4513',
+                isFloor: true
+            });
+            
+            // Plataformas flutuantes
             for (let i = 0; i < 6; i++) {
                 platforms.push({
                     x: Math.random() * (canvas.width - 60),
-                    y: i * 100,
+                    y: canvas.height - 150 - (i * 100),
                     width: 60,
                     height: 12,
-                    color: '#ff6b9d'
+                    color: '#ff6b9d',
+                    isFloor: false
                 });
             }
-            mario.y = canvas.height - 80;
+            mario.y = canvas.height - 100;
         }
 
         // Inicializar inimigos
@@ -351,8 +364,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                     mario.x + mario.width > platform.x &&
                     mario.x < platform.x + platform.width) {
                     mario.velocityY = -mario.jumpPower;
-                    score++;
-                    document.getElementById('currentScore').textContent = score;
+                    if (!platform.isFloor) { // Só conta pontos em plataformas, não no chão
+                        score++;
+                        document.getElementById('currentScore').textContent = score;
+                    }
                 }
             });
 
@@ -391,8 +406,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 platforms.forEach(p => p.y += diff);
                 enemies.forEach(e => e.y += diff);
 
-                // Gerar novas plataformas
+                // Gerar novas plataformas (exceto o chão)
                 platforms.forEach((platform) => {
+                    if (platform.isFloor) return; // Não mexer no chão
+                    
                     if (platform.y > canvas.height) {
                         platform.y = -10;
                         platform.x = Math.random() * (canvas.width - 60);
