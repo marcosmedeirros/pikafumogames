@@ -126,8 +126,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
 
         // Busca dados da sala e oponentes
-        $sala = $pdo->query("SELECT status, seed FROM corrida_salas WHERE id = $sala_id")->fetch(PDO::FETCH_ASSOC);
-        $players = $pdo->query("SELECT id_usuario, nome_usuario, status, progresso, lane, tempo_final FROM corrida_participantes WHERE id_sala = $sala_id")->fetchAll(PDO::FETCH_ASSOC);
+        $stmt_sala = $pdo->prepare("SELECT status, seed FROM corrida_salas WHERE id = :sid");
+        $stmt_sala->execute([':sid' => $sala_id]);
+        $sala = $stmt_sala->fetch(PDO::FETCH_ASSOC);
+        
+        $stmt_players = $pdo->prepare("SELECT id_usuario, nome_usuario, status, progresso, lane, tempo_final FROM corrida_participantes WHERE id_sala = :sid");
+        $stmt_players->execute([':sid' => $sala_id]);
+        $players = $stmt_players->fetchAll(PDO::FETCH_ASSOC);
         
         echo json_encode(['sala' => $sala, 'players' => $players]);
         exit;
@@ -150,7 +155,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     if ($_POST['acao'] == 'ver_podio') {
         $sala_id = $_POST['sala_id'];
         $moedas_coletadas = isset($_POST['moedas']) ? min((int)$_POST['moedas'], 10) : 0; // Máximo 10
-        $ranking = $pdo->query("SELECT id_usuario, nome_usuario, tempo_final FROM corrida_participantes WHERE id_sala = $sala_id AND status = 'finalizou' ORDER BY tempo_final ASC")->fetchAll(PDO::FETCH_ASSOC);
+        
+        $stmt_rank = $pdo->prepare("SELECT id_usuario, nome_usuario, tempo_final FROM corrida_participantes WHERE id_sala = :sid AND status = 'finalizou' ORDER BY tempo_final ASC");
+        $stmt_rank->execute([':sid' => $sala_id]);
+        $ranking = $stmt_rank->fetchAll(PDO::FETCH_ASSOC);
         
         $premio = 0;
         if (!empty($ranking) && $ranking[0]['id_usuario'] == $user_id) {
@@ -160,7 +168,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             
             if ($check->fetchColumn() == 0) {
                 // Multiplayer: Leva todo o dinheiro apostado (5 moedas * número de players)
-                $count = $pdo->query("SELECT COUNT(*) FROM corrida_participantes WHERE id_sala = $sala_id")->fetchColumn();
+                $stmt_count = $pdo->prepare("SELECT COUNT(*) FROM corrida_participantes WHERE id_sala = :sid");
+                $stmt_count->execute([':sid' => $sala_id]);
+                $count = $stmt_count->fetchColumn();
                 $premio = $count * 5; // Todo o pote vai para o vencedor
                 
                 $pdo->beginTransaction();
@@ -358,14 +368,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
     function syncLobby() {
         const fd = new FormData(); fd.append('acao', 'sync_estado'); fd.append('sala_id', roomId);
-        fetch('index.php?game=corrida', { method:'POST', body:fd }).then(r=>r.json()).then(d => {
-            renderLobby(d.players);
-            // Verifica se começou
-            if(d.sala.status === 'correndo') {
+        fetch('index.php?game=corrida', { method:'POST', body:fd })
+            .then(r => r.text())
+            .then(text => {
+                try {
+                    const d = JSON.parse(text);
+                    renderLobby(d.players);
+                    // Verifica se começou
+                    if(d.sala.status === 'correndo') {
+                        clearInterval(syncInterval);
+                        initRace(parseInt(d.sala.seed));
+                    }
+                } catch(e) {
+                    console.error('Erro ao processar resposta:', text);
+                    clearInterval(syncInterval);
+                    alert('Erro no servidor. Verifique o console.');
+                }
+            })
+            .catch(err => {
+                console.error('Erro de rede:', err);
                 clearInterval(syncInterval);
-                initRace(parseInt(d.sala.seed));
-            }
-        });
+            });
     }
 
     function renderLobby(players) {
