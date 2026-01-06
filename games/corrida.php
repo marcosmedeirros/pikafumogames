@@ -51,6 +51,8 @@ try {
 
 // --- API AJAX ---
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
+    // Desabilita display de erros para não quebrar JSON
+    ini_set('display_errors', 0);
     header('Content-Type: application/json');
     
     // A. ENTRAR/CRIAR SALA
@@ -117,7 +119,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
     // C. POLLING LOBBY & JOGO (Sincronização)
     if ($_POST['acao'] == 'sync_estado') {
-        $sala_id = $_POST['sala_id'];
+        $sala_id = isset($_POST['sala_id']) ? (int)$_POST['sala_id'] : 0;
+        
+        if (!$sala_id) {
+            echo json_encode(['erro' => 'ID da sala inválido']);
+            exit;
+        }
         
         // Se estiver correndo, atualiza meu progresso
         if (isset($_POST['progresso'])) {
@@ -129,6 +136,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         $stmt_sala = $pdo->prepare("SELECT status, seed FROM corrida_salas WHERE id = :sid");
         $stmt_sala->execute([':sid' => $sala_id]);
         $sala = $stmt_sala->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$sala) {
+            echo json_encode(['erro' => 'Sala não encontrada']);
+            exit;
+        }
         
         $stmt_players = $pdo->prepare("SELECT id_usuario, nome_usuario, status, progresso, lane, tempo_final FROM corrida_participantes WHERE id_sala = :sid");
         $stmt_players->execute([':sid' => $sala_id]);
