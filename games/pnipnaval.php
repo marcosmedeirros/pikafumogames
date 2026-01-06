@@ -86,9 +86,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 foreach ($salas as $s) {
                     $valor = $s['valor_aposta'] ?? 10;
                     
-                    $btn = ($s['id_jog1'] == $user_id) 
-                        ? '<span class="badge bg-secondary bg-opacity-50 border border-secondary text-light"><i class="bi bi-hourglass-split me-1"></i>Aguardando</span>'
-                        : '<button onclick="entrarSala('.$s['id'].', '.$valor.')" class="btn btn-sm btn-success fw-bold shadow-sm px-3"><i class="bi bi-crosshair me-1"></i>COMBATER</button>';
+                    if ($s['id_jog1'] == $user_id) {
+                        // Quem criou a sala pode desistir e pegar de volta os pontos
+                        $btn = '<div class="d-flex gap-2">
+                            <span class="badge bg-secondary bg-opacity-50 border border-secondary text-light"><i class="bi bi-hourglass-split me-1"></i>Aguardando</span>
+                            <button onclick="desistirSala('.$s['id'].', '.$valor.')" class="btn btn-sm btn-outline-danger fw-bold"><i class="bi bi-flag-fill me-1"></i>Desistir</button>
+                        </div>';
+                    } else {
+                        // Outros podem entrar na sala
+                        $btn = '<button onclick="entrarSala('.$s['id'].', '.$valor.')" class="btn btn-sm btn-success fw-bold shadow-sm px-3"><i class="bi bi-crosshair me-1"></i>COMBATER</button>';
+                    }
                     
                     echo "<tr class='align-middle'>
                         <td class='ps-3'>
@@ -132,6 +139,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
             $pdo->commit();
             echo json_encode(['sucesso' => true, 'sala_id' => $sala_id]);
+            exit;
+        }
+
+        // B.5 DESISTIR DA SALA (REEMBOLSAR)
+        if ($acao == 'desistir_sala') {
+            $sala_id = (int)$_POST['sala_id'];
+            $valor = (int)$_POST['valor'];
+
+            $pdo->beginTransaction();
+
+            // Verifica se é o criador da sala
+            $stmtS = $pdo->prepare("SELECT * FROM naval_salas WHERE id = :id FOR UPDATE");
+            $stmtS->execute([':id' => $sala_id]);
+            $sala = $stmtS->fetch(PDO::FETCH_ASSOC);
+
+            if (!$sala) throw new Exception("Sala não existe.");
+            if ($sala['id_jog1'] != $user_id) throw new Exception("Você não criou esta sala.");
+            if ($sala['status'] != 'aguardando') throw new Exception("Sala não está mais disponível.");
+
+            // Reembolsa os pontos ao criador
+            $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :uid")
+                ->execute([':val' => $valor, ':uid' => $user_id]);
+
+            // Deleta a sala
+            $pdo->prepare("DELETE FROM naval_salas WHERE id = :id")->execute([':id' => $sala_id]);
+            $pdo->prepare("DELETE FROM naval_tabuleiros WHERE id_sala = :id")->execute([':id' => $sala_id]);
+
+            $pdo->commit();
+            echo json_encode(['sucesso' => true, 'mensagem' => 'Sala encerrada. Pontos reembolsados!']);
             exit;
         }
 
@@ -323,6 +359,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
             exit;
         }
 
+        // G. DESISTIR
+        if ($acao == 'desistir') {
+            $sala_id = $_POST['sala_id'];
+
+            $pdo->beginTransaction();
+
+            $stmtS = $pdo->prepare("SELECT * FROM naval_salas WHERE id = :id FOR UPDATE");
+            $stmtS->execute([':id' => $sala_id]);
+            $sala = $stmtS->fetch(PDO::FETCH_ASSOC);
+
+            if (!$sala) throw new Exception("Sala inexistente ou já encerrada.");
+
+            // Determina o oponente
+            $oponente_id = ($sala['id_jog1'] == $user_id) ? $sala['id_jog2'] : $sala['id_jog1'];
+
+            if ($oponente_id) {
+                // Marca vitória para o oponente e paga prêmio
+                $pdo->prepare("UPDATE naval_salas SET status = 'fim', vencedor_id = :vid WHERE id = :id")
+                    ->execute([':vid' => $oponente_id, ':id' => $sala_id]);
+
+                $premio = ($sala['valor_aposta'] ?? 10) * 2;
+                $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :id")
+                    ->execute([':val' => $premio, ':id' => $oponente_id]);
+
+                $pdo->commit();
+                echo json_encode(['sucesso' => true, 'mensagem' => 'Você desistiu. O oponente venceu.']);
+                exit;
+            } else {
+                // Sem oponente: encerra sala e reembolsa o criador
+                // Se o usuário que criou é quem desistiu, reembolsa
+                if ($sala['id_jog1'] == $user_id) {
+                    $pdo->prepare("UPDATE usuarios SET pontos = pontos + :val WHERE id = :id")
+                        ->execute([':val' => ($sala['valor_aposta'] ?? 10), ':id' => $user_id]);
+                }
+                $pdo->prepare("UPDATE naval_salas SET status = 'fim' WHERE id = :id")->execute([':id' => $sala_id]);
+                $pdo->commit();
+                echo json_encode(['sucesso' => true, 'mensagem' => 'Sala encerrada e aposta reembolsada.']);
+                exit;
+            }
+        }
+
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
         echo json_encode(['erro' => $e->getMessage()]);
@@ -487,17 +564,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
                 <div class="text-secondary fw-bold small">VS</div>
                 <div class="text-danger fw-bold fs-5" id="enemy-name"><i class="bi bi-incognito"></i> Oponente</div>
             </div>
+            <div class="mt-3">
+                <button class="btn btn-sm btn-outline-danger" onclick="desistir()"><i class="bi bi-flag-fill me-1"></i> Desistir</button>
+            </div>
         </div>
 
         <!-- AREA DE SETUP -->
         <div id="setup-phase" class="text-center">
             <p class="text-secondary mb-3">Posicione sua frota estrategicamente.</p>
             <div class="ship-selector">
-                <div class="ship-btn active" onclick="selectShip(5)">Porta-Aviões (5)</div>
-                <div class="ship-btn" onclick="selectShip(4)">Encouraçado (4)</div>
-                <div class="ship-btn" onclick="selectShip(3)">Submarino (3)</div>
-                <div class="ship-btn" onclick="selectShip(3)">Cruzador (3)</div>
-                <div class="ship-btn" onclick="selectShip(2)">Destróier (2)</div>
+                <div id="ship-carrier" class="ship-btn active" onclick="selectShip('carrier',5)">Porta-Aviões (5)</div>
+                <div id="ship-battleship" class="ship-btn" onclick="selectShip('battleship',4)">Encouraçado (4)</div>
+                <div id="ship-submarine" class="ship-btn" onclick="selectShip('submarine',3)">Submarino (3)</div>
+                <div id="ship-cruiser" class="ship-btn" onclick="selectShip('cruiser',3)">Cruzador (3)</div>
+                <div id="ship-destroyer" class="ship-btn" onclick="selectShip('destroyer',2)">Destróier (2)</div>
             </div>
             <button class="btn btn-outline-info btn-sm mb-3 rounded-pill px-3" onclick="rotateShip()"><i class="bi bi-arrow-repeat me-1"></i> Girar (R)</button>
             
@@ -544,9 +624,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     
     // Setup Vars
     let placedShips = []; 
+    // ships: track by id so each type can only be placed once
+    let shipSelectedId = 'carrier';
     let currentShipSize = 5;
     let isVertical = false;
     let shipsPlacedCount = 0;
+    const availableShips = {
+        carrier: { size: 5, placed: false, btnId: 'ship-carrier' },
+        battleship: { size: 4, placed: false, btnId: 'ship-battleship' },
+        submarine: { size: 3, placed: false, btnId: 'ship-submarine' },
+        cruiser: { size: 3, placed: false, btnId: 'ship-cruiser' },
+        destroyer: { size: 2, placed: false, btnId: 'ship-destroyer' }
+    };
 
     // --- LOBBY LOGIC ---
     function updateLobby() {
@@ -566,20 +655,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         if(!confirm('Criar sala apostando '+val+' pontos?')) return;
         
         const fd = new FormData(); fd.append('acao', 'criar_sala'); fd.append('valor', val);
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            if(d.erro) alert(d.erro);
-            else enterGame(d.sala_id);
-        });
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) alert('Erro: ' + d.erro);
+                else if(d.sucesso) enterGame(d.sala_id);
+                else alert('Erro desconhecido ao criar sala.');
+            })
+            .catch(err => alert('Erro ao conectar: ' + err.message));
     }
 
     function entrarSala(id, val) {
         if(!confirm('Entrar na batalha por '+val+' pontos?')) return;
         
         const fd = new FormData(); fd.append('acao', 'entrar_sala'); fd.append('sala_id', id);
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            if(d.erro) alert(d.erro);
-            else enterGame(d.sala_id);
-        });
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) alert('Erro: ' + d.erro);
+                else if(d.sucesso) enterGame(d.sala_id);
+                else alert('Erro desconhecido ao entrar na sala.');
+            })
+            .catch(err => alert('Erro ao conectar: ' + err.message));
     }
 
     function enterGame(id) {
@@ -590,44 +693,74 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         pollInterval = setInterval(gameLoop, 2000);
     }
 
-    // --- GAME LOGIC ---
+    function desistirSala(salaId, valor) {
+        if(!confirm('Desistir da sala e recuperar '+valor+' pontos?')) return;
+        
+        const fd = new FormData(); 
+        fd.append('acao', 'desistir_sala'); 
+        fd.append('sala_id', salaId);
+        fd.append('valor', valor);
+        
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) alert('Erro: ' + d.erro);
+                else {
+                    alert(d.mensagem || 'Sala encerrada.');
+                    updateLobby(); // Atualiza o radar de batalhas
+                }
+            })
+            .catch(err => alert('Erro ao desistir: ' + err.message));
+    }    // --- GAME LOGIC ---
     function gameLoop() {
         if(!salaId) return;
         const fd = new FormData(); fd.append('acao', 'buscar_estado'); fd.append('sala_id', salaId);
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            if(d.erro) { alert(d.erro); clearInterval(pollInterval); location.reload(); return; }
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) { alert(d.erro); clearInterval(pollInterval); location.reload(); return; }
 
-            // Atualiza Nome do Inimigo
-            document.getElementById('enemy-name').innerHTML = '<i class="bi bi-crosshair"></i> ' + d.nome_oponente;
+                // Atualiza Nome do Inimigo
+                document.getElementById('enemy-name').innerHTML = '<i class="bi bi-crosshair"></i> ' + d.nome_oponente;
 
-            // Logica de Estados
-            if(d.status == 'aguardando') {
-                document.getElementById('game-status-text').innerText = "AGUARDANDO OPONENTE...";
-                document.getElementById('setup-phase').style.display = 'none'; 
-                document.getElementById('setup-phase').style.display = 'block';
-            }
-            else if(d.status == 'posicionando') {
-                document.getElementById('game-status-text').innerText = "POSICIONAMENTO";
-                document.getElementById('setup-phase').style.display = 'block';
-                document.getElementById('battle-phase').style.display = 'none';
-            } 
-            else if(d.status == 'jogando') {
-                document.getElementById('setup-phase').style.display = 'none';
-                document.getElementById('battle-phase').style.display = 'flex'; 
-                
-                let msg = (d.vez_de == myId) ? "SUA VEZ! ATAQUE!" : "VEZ DO INIMIGO...";
-                let color = (d.vez_de == myId) ? "text-success" : "text-warning";
-                document.getElementById('game-status-text').innerHTML = `<span class="${color}">${msg}</span>`;
-                
-                renderBattle(d);
-            }
-            else if(d.status == 'fim') {
+                // Logica de Estados
+                if(d.status == 'aguardando') {
+                    document.getElementById('game-status-text').innerText = "AGUARDANDO OPONENTE...";
+                    document.getElementById('setup-phase').style.display = 'none'; 
+                    document.getElementById('setup-phase').style.display = 'block';
+                }
+                else if(d.status == 'posicionando') {
+                    document.getElementById('game-status-text').innerText = "POSICIONAMENTO";
+                    document.getElementById('setup-phase').style.display = 'block';
+                    document.getElementById('battle-phase').style.display = 'none';
+                } 
+                else if(d.status == 'jogando') {
+                    document.getElementById('setup-phase').style.display = 'none';
+                    document.getElementById('battle-phase').style.display = 'flex'; 
+                    
+                    let msg = (d.vez_de == myId) ? "SUA VEZ! ATAQUE!" : "VEZ DO INIMIGO...";
+                    let color = (d.vez_de == myId) ? "text-success" : "text-warning";
+                    document.getElementById('game-status-text').innerHTML = `<span class="${color}">${msg}</span>`;
+                    
+                    renderBattle(d);
+                }
+                else if(d.status == 'fim') {
+                    clearInterval(pollInterval);
+                    if(d.vencedor_id == myId) alert('VITÓRIA! Você ganhou a aposta.');
+                    else alert('DERROTA! Mais sorte na próxima.');
+                    location.reload();
+                }
+            })
+            .catch(err => {
+                console.error('Erro ao buscar estado:', err);
                 clearInterval(pollInterval);
-                if(d.vencedor_id == myId) alert('VITÓRIA! Você ganhou a aposta.');
-                else alert('DERROTA! Mais sorte na próxima.');
-                location.reload();
-            }
-        });
+            });
     }
 
     // --- SETUP FUNCTIONS ---
@@ -646,7 +779,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         }
     }
 
-    function selectShip(size) { currentShipSize = size; }
+    function selectShip(id, size) {
+        // If already placed, prevent re-selection
+        if (availableShips[id] && availableShips[id].placed) {
+            alert('Este navio já foi posicionado.');
+            return;
+        }
+        shipSelectedId = id;
+        currentShipSize = size;
+        // visual active toggle
+        document.querySelectorAll('.ship-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(availableShips[id].btnId);
+        if (btn) btn.classList.add('active');
+    }
     function rotateShip() { isVertical = !isVertical; }
 
     function previewShip(tx, ty) {
@@ -663,16 +808,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
     }
 
     function placeShip(tx, ty) {
+        // Prevent placing more than 5 ships
+        if (shipsPlacedCount >= 5) { alert('Você já posicionou o número máximo de 5 frotas.'); return; }
+
+        // Prevent placing the same ship twice
+        if (!availableShips[shipSelectedId]) { alert('Selecione um navio válido.'); return; }
+        if (availableShips[shipSelectedId].placed) { alert('Este navio já foi posicionado.'); return; }
+
         let cells = getShipCells(tx, ty, currentShipSize, isVertical);
         if(!isValidPlacement(cells)) return;
-        
-        placedShips.push(...cells);
+
+        // store ship as group (object with id and cells)
+        placedShips.push({ id: shipSelectedId, cells: cells });
         shipsPlacedCount++;
-        
+        availableShips[shipSelectedId].placed = true;
+
         cells.forEach(c => {
             let el = document.querySelector(`#setup-grid .cell[data-x="${c.x}"][data-y="${c.y}"]`);
             if(el) el.className = 'cell ship';
         });
+
+        // disable button visually
+        const btn = document.getElementById(availableShips[shipSelectedId].btnId);
+        if (btn) btn.classList.add('disabled');
 
         if(shipsPlacedCount >= 5) {
             document.getElementById('btn-confirm').disabled = false;
@@ -693,18 +851,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
 
     function resetSetup() {
         placedShips = []; shipsPlacedCount = 0;
+        // reset available ships
+        for (let k in availableShips) { availableShips[k].placed = false; const b = document.getElementById(availableShips[k].btnId); if (b) b.classList.remove('disabled'); }
+        // reset active to carrier
+        selectShip('carrier', availableShips['carrier'].size);
         initSetupGrid();
         document.getElementById('btn-confirm').disabled = true;
     }
 
     function confirmarNavios() {
+        if (shipsPlacedCount < 5) { alert('Posicione todas as 5 frotas antes de confirmar.'); return; }
+
+        // convert placedShips (groups) to a flat list of cells to store
+        let flatCells = [];
+        placedShips.forEach(s => { s.cells.forEach(c => flatCells.push(c)); });
+
         const fd = new FormData();
         fd.append('acao', 'confirmar_navios');
         fd.append('sala_id', salaId);
-        fd.append('navios', JSON.stringify(placedShips)); 
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            document.getElementById('setup-phase').innerHTML = "<h3 class='text-info animate__animated animate__pulse animate__infinite'>Frota Confirmada! Aguardando oponente...</h3>";
-        });
+        fd.append('navios', JSON.stringify(flatCells)); 
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) { alert('Erro: ' + d.erro); return; }
+                document.getElementById('setup-phase').innerHTML = "<h3 class='text-info animate__animated animate__pulse animate__infinite'>Frota Confirmada! Aguardando oponente...</h3>";
+            })
+            .catch(err => alert('Erro ao confirmar frota: ' + err.message));
     }
 
     // --- BATTLE RENDER ---
@@ -752,12 +927,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['acao'])) {
         fd.append('sala_id', salaId);
         fd.append('x', x); fd.append('y', y);
 
-        fetch('pnipnaval.php', { method: 'POST', body: fd }).then(r=>r.json()).then(d => {
-            if(d.erro) alert(d.erro);
-        });
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) alert('Erro: ' + d.erro);
+            })
+            .catch(err => alert('Erro ao atirar: ' + err.message));
     }
 
     document.addEventListener('keydown', (e) => { if(e.key === 'r' || e.key === 'R') rotateShip(); });
+
+    // Desistir da partida
+    function desistir() {
+        if(!salaId) return alert('Você não está em uma sala.');
+        if(!confirm('Deseja desistir da partida? O oponente será declarado vencedor.')) return;
+        const fd = new FormData(); fd.append('acao', 'desistir'); fd.append('sala_id', salaId);
+        fetch('pnipnaval.php', { method: 'POST', body: fd })
+            .then(r => {
+                if(!r.ok) throw new Error('Resposta do servidor: ' + r.status);
+                return r.json();
+            })
+            .then(d => {
+                if(d.erro) alert('Erro: ' + d.erro);
+                else alert(d.mensagem || 'Você desistiu.');
+                location.reload();
+            })
+            .catch(err => {
+                alert('Erro ao desistir: ' + err.message);
+                location.reload();
+            });
+    }
 </script>
 </body>
 </html>

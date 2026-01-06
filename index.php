@@ -12,6 +12,8 @@
 
 session_start();
 require 'core/conexao.php';
+require 'core/avatar.php';
+require 'core/sequencia_dias.php';
 
 // Segurança
 if (!isset($_SESSION['user_id'])) {
@@ -59,7 +61,167 @@ try {
     $top_5_cafes = [];
 }
 
-// 4. 3 Últimos Eventos Abertos (para exibir no card e no painel)
+// 4. Obter sequências de Termo e Memória para TODOS os usuários
+$sequencias_usuario = []; // user_id => ['termo' => x, 'memoria' => y]
+
+try {
+    // Buscar todas as sequências
+    $stmt = $pdo->query("
+        SELECT user_id, jogo, sequencia_atual 
+        FROM usuario_sequencias_dias
+        WHERE sequencia_atual > 0
+    ");
+    $todas_sequencias = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    foreach($todas_sequencias as $seq) {
+        $uid = $seq['user_id'];
+        if(!isset($sequencias_usuario[$uid])) {
+            $sequencias_usuario[$uid] = [];
+        }
+        $sequencias_usuario[$uid][$seq['jogo']] = $seq['sequencia_atual'];
+    }
+} catch (PDOException $e) {
+    $sequencias_usuario = [];
+}
+
+// 5. Obter usuário com mais cafés feitos
+$maior_cafe = null;
+
+try {
+    $stmt = $pdo->query("
+        SELECT id, nome, cafes_feitos 
+        FROM usuarios 
+        WHERE cafes_feitos > 0 
+        ORDER BY cafes_feitos DESC 
+        LIMIT 1
+    ");
+    $maior_cafe = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $maior_cafe = null;
+}
+
+// 5.5. Buscar os "reis" dos jogos (vencedores)
+$id_rei_xadrez = null;
+$rei_xadrez = null;
+$id_rei_pinguim = null;
+$rei_pinguim = null;
+$id_rei_flappy = null;
+$rei_flappy = null;
+$id_rei_pnip = null;
+$rei_pnip = null;
+
+try {
+    // Rei do Xadrez: Quem tem mais vitórias
+    $stmt = $pdo->query("
+        SELECT vencedor as user_id, COUNT(*) as vitoria_count
+        FROM xadrez_partidas 
+        WHERE status = 'finalizada' 
+        GROUP BY vencedor 
+        ORDER BY vitoria_count DESC 
+        LIMIT 1
+    ");
+    $xadrez_result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if($xadrez_result) {
+        $id_rei_xadrez = $xadrez_result['user_id'];
+        $stmt2 = $pdo->prepare("SELECT id, nome FROM usuarios WHERE id = :id");
+        $stmt2->execute([':id' => $id_rei_xadrez]);
+        $rei_xadrez = $stmt2->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Rei do Pinguim: Quem tem o maior recorde
+    $stmt = $pdo->query("
+        SELECT id_usuario, MAX(pontuacao_final) as recorde
+        FROM dino_historico 
+        GROUP BY id_usuario 
+        ORDER BY recorde DESC 
+        LIMIT 1
+    ");
+    $pinguim_result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if($pinguim_result) {
+        $id_rei_pinguim = $pinguim_result['id_usuario'];
+        $stmt2 = $pdo->prepare("SELECT id, nome FROM usuarios WHERE id = :id");
+        $stmt2->execute([':id' => $id_rei_pinguim]);
+        $rei_pinguim = $stmt2->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Rei do Flappy: Quem tem o maior recorde
+    $stmt = $pdo->query("
+        SELECT id_usuario, MAX(pontuacao) as recorde
+        FROM flappy_historico 
+        GROUP BY id_usuario 
+        ORDER BY recorde DESC 
+        LIMIT 1
+    ");
+    $flappy_result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if($flappy_result) {
+        $id_rei_flappy = $flappy_result['id_usuario'];
+        $stmt2 = $pdo->prepare("SELECT id, nome FROM usuarios WHERE id = :id");
+        $stmt2->execute([':id' => $id_rei_flappy]);
+        $rei_flappy = $stmt2->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Rei do PNIPNAVAL: Quem tem mais vitórias em Batalha Naval
+    $stmt = $pdo->query("
+        SELECT vencedor_id, COUNT(*) as vitoria_count
+        FROM naval_salas 
+        WHERE status = 'fim' AND vencedor_id IS NOT NULL 
+        GROUP BY vencedor_id 
+        ORDER BY vitoria_count DESC 
+        LIMIT 1
+    ");
+    $pnip_result = $stmt->fetch(PDO::FETCH_ASSOC);
+    if($pnip_result) {
+        $id_rei_pnip = $pnip_result['vencedor_id'];
+        $stmt2 = $pdo->prepare("SELECT id, nome FROM usuarios WHERE id = :id");
+        $stmt2->execute([':id' => $id_rei_pnip]);
+        $rei_pnip = $stmt2->fetch(PDO::FETCH_ASSOC);
+    }
+} catch (Exception $e) {
+    // Silencia erros
+}
+
+// 6. Buscar sequências máximas dos vencedores
+$seq_termo_vencedor = null;
+$seq_memoria_vencedor = null;
+$seq_cafe_vencedor = null;
+
+try {
+    // Maior sequência de Termo geral
+    $stmt = $pdo->query("
+        SELECT u.id, u.nome, usd.sequencia_atual 
+        FROM usuario_sequencias_dias usd
+        JOIN usuarios u ON usd.user_id = u.id
+        WHERE usd.jogo = 'termo' AND usd.sequencia_atual > 0
+        ORDER BY usd.sequencia_atual DESC 
+        LIMIT 1
+    ");
+    $seq_termo_vencedor = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Maior sequência de Memória geral
+    $stmt = $pdo->query("
+        SELECT u.id, u.nome, usd.sequencia_atual 
+        FROM usuario_sequencias_dias usd
+        JOIN usuarios u ON usd.user_id = u.id
+        WHERE usd.jogo = 'memoria' AND usd.sequencia_atual > 0
+        ORDER BY usd.sequencia_atual DESC 
+        LIMIT 1
+    ");
+    $seq_memoria_vencedor = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Maior sequência de Café (mais cafés feitos)
+    $stmt = $pdo->query("
+        SELECT id, nome, cafes_feitos as sequencia_atual
+        FROM usuarios 
+        WHERE cafes_feitos > 0 
+        ORDER BY cafes_feitos DESC 
+        LIMIT 1
+    ");
+    $seq_cafe_vencedor = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    // Silencia erros
+}
+
+// 7. 3 Últimos Eventos Abertos (para exibir no card e no painel)
 try {
     $stmt = $pdo->query("
         SELECT e.id, e.nome, e.data_limite 
@@ -81,7 +243,7 @@ try {
     $ultimos_eventos_abertos = [];
 }
 
-// 5. Eventos Abertos (count)
+// 8. Eventos Abertos (count)
 try {
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM eventos WHERE status = 'aberta'");
     $total_eventos = $stmt->fetch(PDO::FETCH_ASSOC)['total'];
@@ -89,7 +251,7 @@ try {
     $total_eventos = 0;
 }
 
-// 6. Minhas Apostas Abertas (count)
+// 9. Minhas Apostas Abertas (count)
 try {
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as total 
@@ -180,6 +342,27 @@ try {
             background-color: #e65100;
             box-shadow: 0 0 12px #ff6d00;
             color: white;
+        }
+
+        .avatar-btn {
+            background: linear-gradient(135deg, #9d4edd, #5a189a);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .avatar-btn:hover {
+            background: linear-gradient(135deg, #a855f7, #6d28d9);
+            box-shadow: 0 0 12px rgba(157, 78, 221, 0.5);
+            color: white;
+            text-decoration: none;
         }
 
         /* ===== CONTAINER ===== */
@@ -336,13 +519,28 @@ try {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
+            padding: 12px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             font-size: 0.95rem;
+            gap: 10px;
         }
 
         .ranking-item:last-child {
             border-bottom: none;
+        }
+
+        .ranking-avatar {
+            flex-shrink: 0;
+            width: 48px;
+            height: 67px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ranking-avatar svg {
+            width: 100%;
+            height: 100%;
         }
 
         .ranking-position {
@@ -611,13 +809,25 @@ try {
     
     <div class="d-flex align-items-center gap-3">
         <div class="d-none d-md-flex align-items-center gap-2">
-            <span style="color: #999; font-size: 0.9rem;">Bem-vindo(a),</span>
-            <strong><?= htmlspecialchars($usuario['nome']) ?></strong>
+            <div>
+                <span style="color: #999; font-size: 0.9rem;">Bem-vindo(a),</span>
+                <strong><?= htmlspecialchars($usuario['nome']) ?></strong>
+            </div>
+            <div style="width: 36px; height: 51px; display: flex; align-items: center; justify-content: center; border: 1px solid #444; border-radius: 4px;">
+                <?php 
+                    $avatar_user = obterCustomizacaoAvatar($pdo, $user_id);
+                    echo renderizarAvatarSVG($avatar_user, 24);
+                ?>
+            </div>
         </div>
         
         <?php if (!empty($usuario['is_admin']) && $usuario['is_admin'] == 1): ?>
             <a href="admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
         <?php endif; ?>
+        
+        <a href="games/avatar.php" class="avatar-btn">
+            <i class="bi bi-palette-fill"></i> Avatar
+        </a>
         
         <span class="saldo-badge">
             <i class="bi bi-coin me-1"></i><?= number_format($usuario['pontos'], 0, ',', '.') ?> pts
@@ -732,13 +942,21 @@ try {
         </div>
 
         <div class="col-6 col-md-4 col-lg-3">
-            <a href="games/pnipnaval.php" class="game-card" style="--accent: #0277bd;">
-                <span class="game-icon">🚢</span>
-                <div class="game-title">Batalha Naval</div>
-                <div class="game-subtitle">Desafie amigos</div>
+            <a href="games/blackjack.php" class="game-card" style="--accent: #d32f2f;">
+                <span class="game-icon">🃏</span>
+                <div class="game-title">Blackjack</div>
+                <div class="game-subtitle">Chegue a 21</div>
             </a>
         </div>
-    </div>
+
+
+        <div class="col-6 col-md-4 col-lg-3">
+            <a href="games/pnipnaval.php" class="game-card" style="--accent: #00bcd4;">
+                <span class="game-icon">⚔️</span>
+                <div class="game-title">Pnip Naval</div>
+                <div class="game-subtitle">Desafio multiplayer</div>
+            </a>
+        </div>
 
     <!-- SEÇÃO: MINHAS STATS (CARDS NO TOPO) -->
     <h6 class="section-title"><i class="bi bi-person-circle"></i>Minhas Estatísticas</h6>
@@ -798,7 +1016,8 @@ try {
     <!-- SEÇÃO: RANKINGS -->
     <h6 class="section-title"><i class="bi bi-trophy"></i>Rankings</h6>
 
-    <div class="ranking-container">
+    <!-- TOP 5 RANKING GERAL E TOP 5 CAFÉS LADO A LADO -->
+    <div class="ranking-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
         <!-- TOP 5 RANKING GERAL -->
         <div class="ranking-card">
             <div class="ranking-title"><i class="bi bi-fire me-2"></i>Top 5 Geral</div>
@@ -810,7 +1029,15 @@ try {
                 <?php foreach($top_5_ranking as $idx => $jogador): ?>
                     <div class="ranking-item medal-<?= $idx+1 ?>">
                         <span class="ranking-position" aria-label="Posição <?= $idx+1 ?>"></span>
-                        <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
+                        <div class="ranking-avatar">
+                            <?php 
+                                $avatar_jogador = obterCustomizacaoAvatar($pdo, $jogador['id']);
+                                echo renderizarAvatarSVG($avatar_jogador, 32);
+                            ?>
+                        </div>
+                        <div style="display: flex; flex-direction: column; flex: 1; margin: 0 10px;">
+                            <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
+                        </div>
                         <span class="ranking-value">
                             <?= number_format($jogador['lucro_liquido'], 0, ',', '.') ?> pts
                         </span>
@@ -830,6 +1057,12 @@ try {
                 <?php foreach($top_5_cafes as $idx => $jogador): ?>
                     <div class="ranking-item medal-<?= $idx+1 ?>">
                         <span class="ranking-position" aria-label="Posição <?= $idx+1 ?>"></span>
+                        <div class="ranking-avatar">
+                            <?php 
+                                $avatar_jogador = obterCustomizacaoAvatar($pdo, $jogador['id']);
+                                echo renderizarAvatarSVG($avatar_jogador, 32);
+                            ?>
+                        </div>
                         <span class="ranking-name"><?= htmlspecialchars($jogador['nome']) ?></span>
                         <span class="ranking-value">
                             <i class="bi bi-cup-hot"></i> <?= $jogador['cafes_feitos'] ?>
@@ -838,6 +1071,119 @@ try {
                 <?php endforeach; ?>
             <?php endif; ?>
         </div>
+    </div>
+
+    <!-- SEÇÃO: CAMPEÕES (4 POR LINHA) -->
+    <h6 class="section-title" style="margin-top: 30px;"><i class="bi bi-crown-fill"></i>Campeões & Recordistas</h6>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <!-- Campeão Xadrez -->
+        <?php if($rei_xadrez): ?>
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;">♟️</div>
+                <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Rei do Xadrez</div>
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
+                    <?php 
+                        $avatar = obterCustomizacaoAvatar($pdo, $rei_xadrez['id']);
+                        echo renderizarAvatarSVG($avatar, 64);
+                    ?>
+                </div>
+                <div style="font-weight: bold; margin: 10px 0;"><?= htmlspecialchars($rei_xadrez['nome']) ?></div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Campeão Pinguim -->
+        <?php if($rei_pinguim): ?>
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;">🐧</div>
+                <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Rei do Pinguim</div>
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
+                    <?php 
+                        $avatar = obterCustomizacaoAvatar($pdo, $rei_pinguim['id']);
+                        echo renderizarAvatarSVG($avatar, 64);
+                    ?>
+                </div>
+                <div style="font-weight: bold; margin: 10px 0;"><?= htmlspecialchars($rei_pinguim['nome']) ?></div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Campeão Flappy -->
+        <?php if($rei_flappy): ?>
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;">🐦</div>
+                <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Rei do Flappy</div>
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
+                    <?php 
+                        $avatar = obterCustomizacaoAvatar($pdo, $rei_flappy['id']);
+                        echo renderizarAvatarSVG($avatar, 64);
+                    ?>
+                </div>
+                <div style="font-weight: bold; margin: 10px 0;"><?= htmlspecialchars($rei_flappy['nome']) ?></div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Campeão Pnip Naval -->
+        <?php if($rei_pnip): ?>
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;">🚢</div>
+                <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Almirante Naval</div>
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
+                    <?php 
+                        $avatar = obterCustomizacaoAvatar($pdo, $rei_pnip['id']);
+                        echo renderizarAvatarSVG($avatar, 64);
+                    ?>
+                </div>
+                <div style="font-weight: bold; margin: 10px 0;"><?= htmlspecialchars($rei_pnip['nome']) ?></div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Maior Sequência Termo -->
+        <?php if($seq_termo_vencedor): ?>
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;">📝</div>
+                <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Maior Sequência Termo</div>
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
+                    <?php 
+                        $avatar = obterCustomizacaoAvatar($pdo, $seq_termo_vencedor['id']);
+                        echo renderizarAvatarSVG($avatar, 64);
+                    ?>
+                </div>
+                <div style="font-weight: bold; margin: 10px 0;"><?= htmlspecialchars($seq_termo_vencedor['nome']) ?></div>
+                <div style="font-size: 0.9em; color: #ff006e; margin-top: 8px; font-weight: bold;">x<?= $seq_termo_vencedor['sequencia_atual'] ?></div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Maior Sequência Memória -->
+        <?php if($seq_memoria_vencedor): ?>
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;">🧠</div>
+                <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Maior Sequência Memória</div>
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
+                    <?php 
+                        $avatar = obterCustomizacaoAvatar($pdo, $seq_memoria_vencedor['id']);
+                        echo renderizarAvatarSVG($avatar, 64);
+                    ?>
+                </div>
+                <div style="font-weight: bold; margin: 10px 0;"><?= htmlspecialchars($seq_memoria_vencedor['nome']) ?></div>
+                <div style="font-size: 0.9em; color: #00d4ff; margin-top: 8px; font-weight: bold;">x<?= $seq_memoria_vencedor['sequencia_atual'] ?></div>
+            </div>
+        <?php endif; ?>
+
+        <!-- Maior Sequência Café -->
+        <?php if($seq_cafe_vencedor): ?>
+            <div class="ranking-card" style="text-align: center; padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;">☕</div>
+                <div style="font-size: 0.85rem; color: #999; margin-bottom: 10px;">Maior Sequência Café</div>
+                <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0; width: 100%;">
+                    <?php 
+                        $avatar = obterCustomizacaoAvatar($pdo, $seq_cafe_vencedor['id']);
+                        echo renderizarAvatarSVG($avatar, 64);
+                    ?>
+                </div>
+                <div style="font-weight: bold; margin: 10px 0;"><?= htmlspecialchars($seq_cafe_vencedor['nome']) ?></div>
+                <div style="font-size: 0.9em; color: #D2691E; margin-top: 8px; font-weight: bold;">x<?= $seq_cafe_vencedor['sequencia_atual'] ?></div>
+            </div>
+        <?php endif; ?>
     </div>
 
 </div>

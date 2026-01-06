@@ -3,6 +3,8 @@
 // VERSÃO: SEM TRAVAS DE SEGURANÇA
 session_start();
 require '../core/conexao.php';
+require '../core/avatar.php';
+require '../core/sequencia_dias.php';
 
 // 1. Segurança básica
 if (!isset($_SESSION['user_id'])) {
@@ -46,6 +48,46 @@ try {
 
 } catch (Exception $e) {
     // Silencia erros caso as tabelas ainda não existam ou estejam vazias
+}
+
+// 3.5. BUSCA SEQUÊNCIAS DE TERMO E MEMÓRIA PARA TODOS OS USUÁRIOS
+$sequencias_usuario = []; // user_id => ['termo' => x, 'memoria' => y]
+
+try {
+    // Buscar todas as sequências
+    $stmt = $pdo->query("
+        SELECT user_id, jogo, sequencia_atual 
+        FROM usuario_sequencias_dias
+        WHERE sequencia_atual > 0
+    ");
+    $todas_sequencias = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    foreach($todas_sequencias as $seq) {
+        $uid = $seq['user_id'];
+        if(!isset($sequencias_usuario[$uid])) {
+            $sequencias_usuario[$uid] = [];
+        }
+        $sequencias_usuario[$uid][$seq['jogo']] = $seq['sequencia_atual'];
+    }
+} catch (Exception $e) {
+    // Silencia erros caso a tabela não exista
+    $sequencias_usuario = [];
+}
+
+// 3.6. BUSCA USUÁRIO COM MAIS CAFÉS FEITOS
+$maior_cafe = null;
+
+try {
+    $stmt = $pdo->query("
+        SELECT id, nome, cafes_feitos 
+        FROM usuarios 
+        WHERE cafes_feitos > 0 
+        ORDER BY cafes_feitos DESC 
+        LIMIT 1
+    ");
+    $maior_cafe = $stmt->fetch(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $maior_cafe = null;
 }
 
 // 4. BUSCA RANKING (LUCRO LÍQUIDO + SALDO) 🧠
@@ -196,7 +238,11 @@ try {
     <!-- Header -->
     <div class="navbar-custom d-flex justify-content-between align-items-center shadow-lg sticky-top">
         <div class="d-flex align-items-center gap-3">
-            <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+            <?php $meu_avatar = obterCustomizacaoAvatar($pdo, $user_id); ?>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <?= avatarHTML($meu_avatar, 'micro') ?>
+                <span class="fs-5">Olá, <strong><?= htmlspecialchars($meu_perfil['nome']) ?></strong></span>
+            </div>
             <?php if (!empty($meu_perfil['is_admin']) && $meu_perfil['is_admin'] == 1): ?>
                 <a href="../admin/dashboard.php" class="admin-btn"><i class="bi bi-gear-fill me-1"></i> Admin</a>
             <?php endif; ?>
@@ -252,8 +298,9 @@ try {
                         ?>
                             <div class="<?= $classe_linha ?>">
                                 <!-- Coluna Jogador -->
-                                <div class="d-flex align-items-center flex-grow-1 overflow-hidden">
+                                <div class="d-flex align-items-center flex-grow-1 overflow-hidden" style="gap:10px;">
                                     <?= $icone ?>
+                                    <?php $avatar_jogador = obterCustomizacaoAvatar($pdo, $user['id']); echo avatarHTML($avatar_jogador, 'mini'); ?>
                                     <span class="fs-6 text-white text-truncate">
                                         <?= htmlspecialchars($user['nome']) ?>
                                         
@@ -272,6 +319,24 @@ try {
 
                                         <?php if($user['id'] == $id_rei_pnip): ?>
                                             <span class="badge tag-badge tag-pnip ms-2" title="Almirante da Batalha Naval (Mais vitórias)">🚢 PNIP</span>
+                                        <?php endif; ?>
+
+                                        <?php if(isset($sequencias_usuario[$user['id']]['termo']) && $sequencias_usuario[$user['id']]['termo'] > 0): ?>
+                                            <span style="background: linear-gradient(135deg, #ff006e, #8338ec); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 6px; display: inline-block;">
+                                                📝 Termo x<?= $sequencias_usuario[$user['id']]['termo'] ?>
+                                            </span>
+                                        <?php endif; ?>
+
+                                        <?php if(isset($sequencias_usuario[$user['id']]['memoria']) && $sequencias_usuario[$user['id']]['memoria'] > 0): ?>
+                                            <span style="background: linear-gradient(135deg, #00d4ff, #0099ff); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 6px; display: inline-block;">
+                                                🧠 Memória x<?= $sequencias_usuario[$user['id']]['memoria'] ?>
+                                            </span>
+                                        <?php endif; ?>
+
+                                        <?php if($maior_cafe && $maior_cafe['id'] == $user['id'] && $maior_cafe['cafes_feitos'] > 0): ?>
+                                            <span style="background: linear-gradient(135deg, #8B4513, #D2691E); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; margin-left: 6px; display: inline-block;">
+                                                ☕ Café x<?= $maior_cafe['cafes_feitos'] ?>
+                                            </span>
                                         <?php endif; ?>
 
                                         <?php if($user['id'] == $user_id): ?>
